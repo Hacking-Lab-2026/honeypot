@@ -1,0 +1,52 @@
+package probe
+
+import (
+	"github.com/hacking-lab/ddos-honeypot/internal/domain/services"
+	"github.com/hacking-lab/ddos-honeypot/internal/ports"
+)
+
+// ProcessProbeUsecase handles the core business logic for processing incoming probes
+type ProcessProbeUsecase struct {
+	probeService *services.ProbeService
+	repository   ports.EventRepository
+	logger       ports.Logger
+	rateLimiter  ports.RateLimiter
+}
+
+// NewProcessProbeUsecase creates a new instance
+func NewProcessProbeUsecase(
+	probeService *services.ProbeService,
+	repository ports.EventRepository,
+	logger ports.Logger,
+	rateLimiter ports.RateLimiter,
+) *ProcessProbeUsecase {
+	return &ProcessProbeUsecase{
+		probeService: probeService,
+		repository:   repository,
+		logger:       logger,
+		rateLimiter:  rateLimiter,
+	}
+}
+
+// Execute processes an incoming probe
+func (u *ProcessProbeUsecase) Execute(sourceIP string, port int, protocol string, payload string) (string, error) {
+	u.logger.Info("Processing probe from " + sourceIP)
+
+	// Check rate limiting
+	if !u.rateLimiter.Allow(sourceIP) {
+		u.logger.Info("Probe from " + sourceIP + " rate limited")
+		return "", nil
+	}
+
+	// Create probe event through domain service
+	event := u.probeService.ProcessProbe(sourceIP, port, protocol, payload)
+
+	// Persist the event
+	if err := u.repository.Save(event); err != nil {
+		u.logger.Error("Failed to save probe event from " + sourceIP)
+		return "", err
+	}
+
+	u.logger.Info("Probe from " + sourceIP + " processed successfully")
+	return event.Response, nil
+}
