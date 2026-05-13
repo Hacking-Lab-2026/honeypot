@@ -1,7 +1,8 @@
 package services
 
 import (
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/models"
+	"fmt"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 	"time"
 )
 
@@ -11,7 +12,7 @@ type ProbeService struct{}
 // ProcessProbe processes an incoming probe and generates a response
 func (ps *ProbeService) ProcessProbe(sourceIP string, port int, protocol string, payload string) *models.ProbeEvent {
 	return &models.ProbeEvent{
-		ID:        sourceIP + "-" + string(rune(port)),
+		ID:        fmt.Sprintf("%s-%d", sourceIP, port),
 		SourceIP:  sourceIP,
 		Port:      port,
 		Protocol:  protocol,
