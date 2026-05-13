@@ -67,5 +67,8 @@ jobs:
       platforms: linux/amd64,linux/arm64
       version: ${{ needs.determine-version.outputs.version }}
       add_latest: ${{ needs.determine-version.outputs.add_latest }}
+      registry_token_secret: GIT_TOKEN
+    secrets:
+      registry_token: ${{ secrets.GIT_TOKEN }}
 
 
