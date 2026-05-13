@@ -56,6 +56,9 @@ jobs:
 
   build-and-push:
     needs: determine-version
+    permissions:
+      contents: read
+      packages: write
     uses: axillusion/build-tools/.github/workflows/docker-build-and-push.yml@main
     with:
       image: ghcr.io/Hacking-Lab-2026/ddos-honeypot
