@@ -66,6 +66,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           version: ${{ steps.version.outputs.version }}
           add_latest: ${{ steps.version.outputs.add_latest }}
-        secrets:
-          REGISTRY_USERNAME: ${{ github.actor }}
-          REGISTRY_PASSWORD: ${{ secrets.GIT_TOKEN }}
+
