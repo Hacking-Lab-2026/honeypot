@@ -25,21 +25,18 @@ jobs:
       - name: Run tests
         run: go test -race -v ./...
 
-  build-and-push:
+  determine-version:
     needs: test
     if: |
       (github.ref == 'refs/heads/main' || 
        startsWith(github.ref, 'refs/tags/v') || 
        github.event_name == 'release')
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      add_latest: ${{ steps.version.outputs.add_latest }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Determine version
         id: version
         run: |
@@ -57,13 +54,15 @@ jobs:
             echo "add_latest=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build and push Docker image
-        uses: axillusion/build-tools/.github/workflows/docker-build-and-push.yml@main
-        with:
-          image: ghcr.io/Hacking-Lab-2026/ddos-honeypot
-          context: .
-          dockerfile: Dockerfile
-          platforms: linux/amd64,linux/arm64
-          version: ${{ steps.version.outputs.version }}
-          add_latest: ${{ steps.version.outputs.add_latest }}
+  build-and-push:
+    needs: determine-version
+    uses: axillusion/build-tools/.github/workflows/docker-build-and-push.yml@main
+    with:
+      image: ghcr.io/Hacking-Lab-2026/ddos-honeypot
+      context: .
+      dockerfile: Dockerfile
+      platforms: linux/amd64,linux/arm64
+      version: ${{ needs.determine-version.outputs.version }}
+      add_latest: ${{ needs.determine-version.outputs.add_latest }}
+
 
