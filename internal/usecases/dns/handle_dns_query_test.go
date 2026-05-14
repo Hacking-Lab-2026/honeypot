@@ -31,11 +31,11 @@ func (m *mockLogger) Error(msg string) { m.logs = append(m.logs, "ERROR: "+msg) 
 
 type allowAllLimiter struct{}
 
-func (allowAllLimiter) Allow(_ string) bool { return true }
+func (allowAllLimiter) Allow(_ string, _ int) bool { return true }
 
 type blockAllLimiter struct{}
 
-func (blockAllLimiter) Allow(_ string) bool { return false }
+func (blockAllLimiter) Allow(_ string, _ int) bool { return false }
 
 // ---- tests ----
 

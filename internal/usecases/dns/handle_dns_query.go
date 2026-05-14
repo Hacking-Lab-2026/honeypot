@@ -38,7 +38,7 @@ func NewHandleDNSQueryUsecase(
 // Execute processes a raw DNS query payload and returns the response bytes to send back.
 // destinationIP is the honeypot address the probe arrived on; variantID is the A/B arm.
 func (u *HandleDNSQueryUsecase) Execute(sourceIP string, sourcePort int, destinationIP string, payload []byte, config models.DNSConfig, variantID string) ([]byte, error) {
-	if !u.rateLimiter.Allow(sourceIP) {
+	if !u.rateLimiter.Allow(sourceIP, 0) {
 		u.logger.Info("DNS query from " + sourceIP + " rate limited")
 		return nil, nil
 	}

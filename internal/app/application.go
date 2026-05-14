@@ -46,7 +46,7 @@ type Application struct {
 // This is the single wiring point — no other file may perform dependency injection.
 func NewApplication(cfg Config) (*Application, error) {
 	logger := &logging.ConsoleLogger{}
-	rateLimiter := &ratelimit.NoOpRateLimiter{}
+	rateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
 
 	// ── Probe (generic UDP) server ────────────────────────────────────────────
 	probeRepo := persistence.NewInMemoryEventRepository()
