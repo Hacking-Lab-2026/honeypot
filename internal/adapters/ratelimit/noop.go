@@ -5,6 +5,6 @@ package ratelimit
 type NoOpRateLimiter struct{}
 
 // Allow always returns true, allowing all requests
-func (r *NoOpRateLimiter) Allow(sourceIP string) bool {
+func (r *NoOpRateLimiter) Allow(sourceIP string, responseBytes int) bool {
 	return true
 }

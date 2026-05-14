@@ -17,7 +17,7 @@ type EventRepository interface {
 // RateLimiter defines the interface for rate-limiting strategies.
 // It operates per source IP and can be shared across services.
 type RateLimiter interface {
-	Allow(sourceIP string) bool
+	Allow(sourceIP string, responseBytes int) bool
 }
 
 // DNSEventRepository defines the interface for DNS probe event persistence.
