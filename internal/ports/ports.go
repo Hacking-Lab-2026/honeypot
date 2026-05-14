@@ -16,5 +16,5 @@ type EventRepository interface {
 
 // RateLimiter defines the interface for rate limiting strategies
 type RateLimiter interface {
-	Allow(sourceIP string) bool
+	Allow(sourceIP string, responseBytes int) bool
 }
