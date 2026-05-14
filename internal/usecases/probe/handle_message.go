@@ -32,14 +32,14 @@ func NewProcessProbeUsecase(
 func (u *ProcessProbeUsecase) Execute(sourceIP string, port int, protocol string, payload string) (string, error) {
 	u.logger.Info("Processing probe from " + sourceIP)
 
+	// Create probe event through domain service
+	event := u.probeService.ProcessProbe(sourceIP, port, protocol, payload)
+
 	// Check rate limiting
-	if !u.rateLimiter.Allow(sourceIP) {
+	if !u.rateLimiter.Allow(sourceIP, len(event.Response)) {
 		u.logger.Info("Probe from " + sourceIP + " rate limited")
 		return "", nil
 	}
-
-	// Create probe event through domain service
-	event := u.probeService.ProcessProbe(sourceIP, port, protocol, payload)
 
 	// Persist the event
 	if err := u.repository.Save(event); err != nil {
