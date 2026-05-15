@@ -23,16 +23,16 @@ var _ = Describe("NoOpRateLimiter", func() {
 
 	Describe("Allow", func() {
 		It("should always allow requests", func() {
-			Expect(limiter.Allow("192.168.1.1")).To(BeTrue())
-			Expect(limiter.Allow("10.0.0.1")).To(BeTrue())
+			Expect(limiter.Allow("192.168.1.1", 512)).To(BeTrue())
+			Expect(limiter.Allow("10.0.0.1", 256)).To(BeTrue())
 		})
 
 		It("should allow multiple requests from same IP", func() {
 			ip := "192.168.1.1"
 
-			result1 := limiter.Allow(ip)
-			result2 := limiter.Allow(ip)
-			result3 := limiter.Allow(ip)
+			result1 := limiter.Allow(ip, 512)
+			result2 := limiter.Allow(ip, 256)
+			result3 := limiter.Allow(ip, 1024)
 
 			Expect(result1).To(BeTrue())
 			Expect(result2).To(BeTrue())
@@ -49,7 +49,7 @@ var _ = Describe("NoOpRateLimiter", func() {
 			}
 
 			for _, ip := range ips {
-				Expect(limiter.Allow(ip)).To(BeTrue())
+				Expect(limiter.Allow(ip, 512)).To(BeTrue())
 			}
 		})
 	})

@@ -115,6 +115,6 @@ type mockRateLimiter struct {
 	allowRequests bool
 }
 
-func (m *mockRateLimiter) Allow(sourceIP string) bool {
+func (m *mockRateLimiter) Allow(sourceIP string, responseBytes int) bool {
 	return m.allowRequests
 }
