@@ -32,6 +32,7 @@ type ExperimentRepository interface {
 	GetExperiment(id string) (*models.Experiment, error)
 	ListExperiments() ([]*models.Experiment, error)
 	UpdateExperiment(exp *models.Experiment) error
+	FindActiveExperiment() (*models.Experiment, error)
 	SaveVariant(v *models.Variant) error
 	GetVariant(id string) (*models.Variant, error)
 	ListVariants(experimentID string) ([]*models.Variant, error)

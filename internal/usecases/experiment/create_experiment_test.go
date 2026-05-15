@@ -50,6 +50,15 @@ func (r *mockExperimentRepo) UpdateExperiment(exp *models.Experiment) error {
 	return nil
 }
 
+func (r *mockExperimentRepo) FindActiveExperiment() (*models.Experiment, error) {
+	for _, e := range r.experiments {
+		if e.Status == models.StatusActive {
+			return e, nil
+		}
+	}
+	return nil, fmt.Errorf("no active experiment")
+}
+
 func (r *mockExperimentRepo) SaveVariant(v *models.Variant) error {
 	if _, exists := r.variants[v.ID]; !exists {
 		r.byExp[v.ExperimentID] = append(r.byExp[v.ExperimentID], v.ID)

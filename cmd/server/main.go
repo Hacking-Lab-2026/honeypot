@@ -15,12 +15,11 @@ func main() {
 	defer cancel()
 
 	cfg := app.Config{
-		ProbeAddr:          getEnv("PROBE_ADDR", "127.0.0.1:5353"),
-		CoordinatorAddr:    getEnv("COORDINATOR_ADDR", "0.0.0.0:8080"),
-		ActiveExperimentID: getEnv("ACTIVE_EXPERIMENT_ID", ""),
-		HoneypotIPs:        getEnv("HONEYPOT_IPS", "127.0.0.1"),
-		DNSPort:            getEnv("DNS_PORT", "5354"),
-		EventsFile:         getEnv("EVENTS_FILE", ""),
+		ProbeAddr:       getEnv("PROBE_ADDR", "127.0.0.1:5353"),
+		CoordinatorAddr: getEnv("COORDINATOR_ADDR", "0.0.0.0:8080"),
+		HoneypotIPs:     getEnv("HONEYPOT_IPS", "127.0.0.1"),
+		DNSPort:         getEnv("DNS_PORT", "5354"),
+		EventsFile:      getEnv("EVENTS_FILE", ""),
 	}
 
 	application, err := app.NewApplication(cfg)

@@ -33,23 +33,19 @@ func NewAssignVariantUsecase(
 	}
 }
 
-// Execute returns the variant for the given experiment.
+// Execute returns the variant for whichever experiment is currently active.
 //
-// In source mode the assignment is sticky per sourceIP: the same (experimentID, sourceIP) pair
-// always returns the same variant.  In destination mode the variant is determined solely by
-// destinationIP (which honeypot IP the probe arrived on) and is never persisted as an assignment.
-func (u *AssignVariantUsecase) Execute(experimentID, sourceIP, destinationIP string) (*models.Variant, error) {
-	exp, err := u.experimentRepo.GetExperiment(experimentID)
+// In source mode the assignment is sticky per sourceIP.  In destination mode the variant is
+// determined solely by destinationIP (which honeypot IP the probe arrived on).
+func (u *AssignVariantUsecase) Execute(sourceIP, destinationIP string) (*models.Variant, error) {
+	exp, err := u.experimentRepo.FindActiveExperiment()
 	if err != nil {
-		return nil, fmt.Errorf("experiment %q not found: %w", experimentID, err)
-	}
-	if exp.Status != models.StatusActive {
-		return nil, fmt.Errorf("experiment %q is not active (status=%s)", experimentID, exp.Status)
+		return nil, fmt.Errorf("no active experiment: %w", err)
 	}
 
-	variants, err := u.experimentRepo.ListVariants(experimentID)
+	variants, err := u.experimentRepo.ListVariants(exp.ID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list variants for experiment %q: %w", experimentID, err)
+		return nil, fmt.Errorf("failed to list variants for experiment %q: %w", exp.ID, err)
 	}
 
 	if exp.AssignmentMode == models.AssignmentByDestination {
@@ -57,7 +53,7 @@ func (u *AssignVariantUsecase) Execute(experimentID, sourceIP, destinationIP str
 	}
 
 	// Source mode: return the existing sticky assignment if present.
-	existing, err := u.assignmentRepo.FindBySourceAndExperiment(sourceIP, experimentID)
+	existing, err := u.assignmentRepo.FindBySourceAndExperiment(sourceIP, exp.ID)
 	if err == nil && existing != nil {
 		variant, err := u.experimentRepo.GetVariant(existing.VariantID)
 		if err != nil {
@@ -67,19 +63,19 @@ func (u *AssignVariantUsecase) Execute(experimentID, sourceIP, destinationIP str
 	}
 
 	// No existing assignment — create one deterministically.
-	assigned, err := u.experimentService.AssignVariant(experimentID, sourceIP, variants)
+	assigned, err := u.experimentService.AssignVariant(exp.ID, sourceIP, variants)
 	if err != nil {
 		return nil, fmt.Errorf("variant assignment failed: %w", err)
 	}
 
 	a := &models.Assignment{
 		SourceIP:     sourceIP,
-		ExperimentID: experimentID,
+		ExperimentID: exp.ID,
 		VariantID:    assigned.ID,
 		AssignedAt:   time.Now(),
 	}
 	if err := u.assignmentRepo.Save(a); err != nil {
-		u.logger.Error(fmt.Sprintf("failed to persist assignment for %s in experiment %q: %v", sourceIP, experimentID, err))
+		u.logger.Error(fmt.Sprintf("failed to persist assignment for %s in experiment %q: %v", sourceIP, exp.ID, err))
 		return nil, err
 	}
 

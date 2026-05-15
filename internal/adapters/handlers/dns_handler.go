@@ -17,43 +17,36 @@ var defaultDNSConfig = models.DNSConfig{
 // Before invoking the DNS usecase it calls AssignVariantUsecase to select the per-source
 // DNSConfig, enabling live A/B testing down to the individual packet.
 type DNSHandler struct {
-	handleUsecase      *dnsusecase.HandleDNSQueryUsecase
-	assignUsecase      *expusecase.AssignVariantUsecase
-	activeExperimentID string // empty string disables A/B assignment
-	logger             ports.Logger
+	handleUsecase *dnsusecase.HandleDNSQueryUsecase
+	assignUsecase *expusecase.AssignVariantUsecase
+	logger        ports.Logger
 }
 
 // NewDNSHandler creates a new handler.
-// Set activeExperimentID to "" to run all probes with the default (Minimal) config.
 func NewDNSHandler(
 	handleUsecase *dnsusecase.HandleDNSQueryUsecase,
 	assignUsecase *expusecase.AssignVariantUsecase,
-	activeExperimentID string,
 	logger ports.Logger,
 ) *DNSHandler {
 	return &DNSHandler{
-		handleUsecase:      handleUsecase,
-		assignUsecase:      assignUsecase,
-		activeExperimentID: activeExperimentID,
-		logger:             logger,
+		handleUsecase: handleUsecase,
+		assignUsecase: assignUsecase,
+		logger:        logger,
 	}
 }
 
 // Handle resolves the A/B variant config then processes the DNS query.
-// destinationIP is the honeypot address the probe arrived on; it is used for destination-mode
-// variant assignment and is recorded in the event log.
+// If no experiment is active, falls back to the default minimal config.
 func (h *DNSHandler) Handle(sourceIP string, sourcePort int, destinationIP string, payload []byte) ([]byte, error) {
 	config := defaultDNSConfig
 	variantID := ""
 
-	if h.activeExperimentID != "" {
-		variant, err := h.assignUsecase.Execute(h.activeExperimentID, sourceIP, destinationIP)
-		if err != nil {
-			h.logger.Error("variant assignment failed for " + sourceIP + ": " + err.Error() + " — using default config")
-		} else {
-			config = variant.DNSConfig
-			variantID = variant.ID
-		}
+	variant, err := h.assignUsecase.Execute(sourceIP, destinationIP)
+	if err != nil {
+		// No active experiment or assignment failed — use safe default silently.
+	} else {
+		config = variant.DNSConfig
+		variantID = variant.ID
 	}
 
 	return h.handleUsecase.Execute(sourceIP, sourcePort, destinationIP, payload, config, variantID)

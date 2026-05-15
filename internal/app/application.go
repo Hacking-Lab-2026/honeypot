@@ -20,9 +20,8 @@ import (
 
 // Config holds all runtime configuration for the application.
 type Config struct {
-	ProbeAddr          string // UDP probe server address (e.g. "127.0.0.1:5353")
-	CoordinatorAddr    string // HTTP coordinator address (e.g. "0.0.0.0:8080")
-	ActiveExperimentID string // ID of the active A/B experiment; "" disables A/B testing
+	ProbeAddr       string // UDP probe server address (e.g. "127.0.0.1:5353")
+	CoordinatorAddr string // HTTP coordinator address (e.g. "0.0.0.0:8080")
 
 	// HoneypotIPs is a comma-separated list of IP addresses to bind DNS servers to.
 	// One DNSServer is started per IP.  Example: "10.0.0.1,10.0.0.2,10.0.0.3"
@@ -91,7 +90,7 @@ func NewApplication(cfg Config) (*Application, error) {
 	// ── DNS honeypot servers — one per honeypot IP ────────────────────────────
 	dnsService := &services.DNSService{}
 	handleDNSUsecase := dnsusecase.NewHandleDNSQueryUsecase(dnsService, dnsEventRepo, logger, rateLimiter)
-	dnsHandler := handlers.NewDNSHandler(handleDNSUsecase, assignVariantUsecase, cfg.ActiveExperimentID, logger)
+	dnsHandler := handlers.NewDNSHandler(handleDNSUsecase, assignVariantUsecase, logger)
 
 	ips := parseIPs(cfg.HoneypotIPs)
 	if len(ips) == 0 {

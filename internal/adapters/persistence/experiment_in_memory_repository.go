@@ -69,6 +69,17 @@ func (r *ExperimentInMemoryRepository) UpdateExperiment(exp *models.Experiment) 
 	return nil
 }
 
+func (r *ExperimentInMemoryRepository) FindActiveExperiment() (*models.Experiment, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, exp := range r.experiments {
+		if exp.Status == models.StatusActive {
+			return exp, nil
+		}
+	}
+	return nil, fmt.Errorf("no active experiment found")
+}
+
 func (r *ExperimentInMemoryRepository) SaveVariant(v *models.Variant) error {
 	if v == nil {
 		return fmt.Errorf("variant cannot be nil")
