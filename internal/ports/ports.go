@@ -1,6 +1,6 @@
 package ports
 
-import "github.com/hacking-lab/ddos-honeypot/internal/domain/models"
+import "github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 
 // Logger defines the interface for logging implementations.
 type Logger interface {

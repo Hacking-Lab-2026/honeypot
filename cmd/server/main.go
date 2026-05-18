@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/Hacking-Lab-2026/honeypot/internal/app"
 	"log"
 	"os"
 	"os/signal"

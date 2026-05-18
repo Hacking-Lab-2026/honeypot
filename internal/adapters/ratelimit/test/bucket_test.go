@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/ratelimit"
+	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/ratelimit"
 )
 
 func TestBucket_AllowsBurst(t *testing.T) {
