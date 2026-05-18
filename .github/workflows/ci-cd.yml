@@ -9,21 +9,10 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.25"
-
-      - name: Run tests
-        run: go test -race -v ./...
+    uses: axillusion/build-tools/.github/workflows/go-test.yml@main
+    with:
+      go_version: "1.25"
+      test_flags: "-race -v"
 
   determine-version:
     needs: test
@@ -39,19 +28,20 @@ jobs:
     steps:
       - name: Determine version
         id: version
+        shell: bash
         run: |
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "add_latest=true" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "add_latest=true" >> "$GITHUB_OUTPUT"
           elif [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
-            VERSION="main-$(git rev-parse --short HEAD)"
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "add_latest=false" >> $GITHUB_OUTPUT
+            VERSION="main-${GITHUB_SHA::7}"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "add_latest=false" >> "$GITHUB_OUTPUT"
           else
-            VERSION="dev-$(git rev-parse --short HEAD)"
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "add_latest=false" >> $GITHUB_OUTPUT
+            VERSION="dev-${GITHUB_SHA::7}"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "add_latest=false" >> "$GITHUB_OUTPUT"
           fi
 
   build-and-push:
@@ -70,5 +60,3 @@ jobs:
       registry_token_secret: GIT_TOKEN
     secrets:
       registry_token: ${{ secrets.GIT_TOKEN }}
-
-
