@@ -51,7 +51,7 @@ jobs:
       packages: write
     uses: axillusion/build-tools/.github/workflows/docker-build-and-push.yml@main
     with:
-      image: ghcr.io/Hacking-Lab-2026/ddos-honeypot
+      image: ghcr.io/hacking-lab-2026/ddos-honeypot
       context: .
       dockerfile: Dockerfile
       platforms: linux/amd64,linux/arm64
