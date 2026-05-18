@@ -2,7 +2,8 @@ package persistence
 
 import (
 	"fmt"
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/models"
+
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 )
 
 // InMemoryEventRepository implements the EventRepository port

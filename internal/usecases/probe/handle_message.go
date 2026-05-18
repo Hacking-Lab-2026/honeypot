@@ -1,8 +1,8 @@
 package probe
 
 import (
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/services"
-	"github.com/hacking-lab/ddos-honeypot/internal/ports"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/services"
+	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 )
 
 // ProcessProbeUsecase handles the core business logic for processing incoming probes

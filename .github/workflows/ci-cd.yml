@@ -1,0 +1,74 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+  pull_request:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Run tests
+        run: go test -race -v ./...
+
+  determine-version:
+    needs: test
+    if: |
+      (github.ref == 'refs/heads/main' || 
+       startsWith(github.ref, 'refs/tags/v') || 
+       github.event_name == 'release')
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      add_latest: ${{ steps.version.outputs.add_latest }}
+
+    steps:
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "add_latest=true" >> $GITHUB_OUTPUT
+          elif [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
+            VERSION="main-$(git rev-parse --short HEAD)"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "add_latest=false" >> $GITHUB_OUTPUT
+          else
+            VERSION="dev-$(git rev-parse --short HEAD)"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "add_latest=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-push:
+    needs: determine-version
+    permissions:
+      contents: read
+      packages: write
+    uses: axillusion/build-tools/.github/workflows/docker-build-and-push.yml@main
+    with:
+      image: ghcr.io/Hacking-Lab-2026/ddos-honeypot
+      context: .
+      dockerfile: Dockerfile
+      platforms: linux/amd64,linux/arm64
+      version: ${{ needs.determine-version.outputs.version }}
+      add_latest: ${{ needs.determine-version.outputs.add_latest }}
+      registry_token_secret: GIT_TOKEN
+    secrets:
+      registry_token: ${{ secrets.GIT_TOKEN }}
+
+

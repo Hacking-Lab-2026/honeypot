@@ -1,6 +1,6 @@
 package handlers
 
-import "github.com/hacking-lab/ddos-honeypot/internal/usecases/probe"
+import "github.com/Hacking-Lab-2026/honeypot/internal/usecases/probe"
 
 // ProbeHandler receives incoming UDP probe requests and orchestrates usecases
 type ProbeHandler struct {

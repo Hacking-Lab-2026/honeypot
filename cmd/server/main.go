@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/hacking-lab/ddos-honeypot/internal/app"
+	"github.com/Hacking-Lab-2026/honeypot/internal/app"
 	"log"
 )
 

@@ -1,13 +1,13 @@
 package app
 
 import (
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/handlers"
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/logging"
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/persistence"
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/ratelimit"
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/servers"
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/services"
-	"github.com/hacking-lab/ddos-honeypot/internal/usecases/probe"
+	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/handlers"
+	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/logging"
+	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/persistence"
+	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/ratelimit"
+	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/servers"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/services"
+	"github.com/Hacking-Lab-2026/honeypot/internal/usecases/probe"
 )
 
 // Application sets up and wires all dependencies

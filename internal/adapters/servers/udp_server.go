@@ -1,8 +1,8 @@
 package servers
 
 import (
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/handlers"
-	"github.com/hacking-lab/ddos-honeypot/internal/ports"
+	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/handlers"
+	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 	"net"
 )
 
