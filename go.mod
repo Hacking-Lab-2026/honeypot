@@ -1,7 +1,7 @@
 module github.com/Hacking-Lab-2026/honeypot
 
-go 1.25.0
-
+go 1.16
+require golang.org/x/time v0.5.0
 require (
 	github.com/onsi/ginkgo/v2 v2.28.3
 	github.com/onsi/gomega v1.40.0

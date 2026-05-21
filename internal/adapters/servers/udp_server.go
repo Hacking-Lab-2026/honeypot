@@ -1,6 +1,11 @@
 package servers
 
 import (
+	"context"
+	"net"
+
+	"github.com/hacking-lab/ddos-honeypot/internal/adapters/handlers"
+	"github.com/hacking-lab/ddos-honeypot/internal/ports"
 	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/handlers"
 	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 	"net"
@@ -22,8 +27,9 @@ func NewServer(addr string, handler *handlers.ProbeHandler, logger ports.Logger)
 	}
 }
 
-// Start begins listening for incoming UDP probes
-func (s *Server) Start() error {
+// Start begins listening for incoming UDP probes.
+// It returns when ctx is cancelled or a fatal socket error occurs.
+func (s *Server) Start(ctx context.Context) error {
 	s.logger.Info("Starting UDP honeypot server on " + s.addr)
 
 	addr, err := net.ResolveUDPAddr("udp", s.addr)
@@ -39,17 +45,27 @@ func (s *Server) Start() error {
 	}
 	defer conn.Close()
 
-	buffer := make([]byte, 512)
+	// Close the connection when the context is cancelled so ReadFromUDP unblocks.
+	go func() {
+		<-ctx.Done()
+		conn.Close()
+	}()
 
+	buffer := make([]byte, 512)
 	for {
 		n, remoteAddr, err := conn.ReadFromUDP(buffer)
 		if err != nil {
+			if ctx.Err() != nil {
+				return nil // clean shutdown via context cancellation
+			}
 			s.logger.Error("Error reading UDP packet: " + err.Error())
 			continue
 		}
 
-		// Process the probe asynchronously
-		go s.handleProbe(conn, remoteAddr, buffer[:n])
+		// Copy the payload before spawning the goroutine so the buffer can be reused.
+		data := make([]byte, n)
+		copy(data, buffer[:n])
+		go s.handleProbe(conn, remoteAddr, data)
 	}
 }
 

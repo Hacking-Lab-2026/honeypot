@@ -15,6 +15,6 @@ func NewBucket(burst int, refillPerSec float64) *Bucket {
 }
 
 // Consume token from bucket, true if success
-func (b *Bucket) TryConsume() bool {
+func (b *Bucket) Allow() bool {
 	return b.inner.Allow()
 }

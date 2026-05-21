@@ -57,7 +57,7 @@ func (aggregate *IPAggregate) Allow(sourceIP string, responseBytes int) bool {
 	e.lastUsed = time.Now()
 	aggregate.mutex.Unlock()
 
-	return e.bucket.TryConsume()
+	return e.bucket.Allow()
 }
 
 // scheduler helper, starts the kick_out procedure once every ttl/2
