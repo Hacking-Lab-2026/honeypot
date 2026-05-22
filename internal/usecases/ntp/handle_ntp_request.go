@@ -55,7 +55,7 @@ func (u *HandleNTPRequestUsecase) Execute(sourceIP string, sourcePort int, desti
 	}
 
 	if !u.rateLimiter.Allow(sourceIP, len(response.Payload)) {
-		u.logger.Info("NTP request from " + sourceIP + " rate limited on egress")
+		u.logger.Info("NTP request from " + sourceIP + " rate limited")
 		return nil, nil
 	}
 

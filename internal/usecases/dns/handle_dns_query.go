@@ -60,7 +60,7 @@ func (u *HandleDNSQueryUsecase) Execute(sourceIP string, sourcePort int, destina
 	}
 
 	if !u.rateLimiter.Allow(sourceIP, len(response.Payload)) {
-		u.logger.Info("DNS query from " + sourceIP + " rate limited on egress")
+		u.logger.Info("DNS query from " + sourceIP + " rate limited")
 		return nil, nil
 	}
 
