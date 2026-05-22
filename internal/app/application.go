@@ -80,12 +80,12 @@ func NewApplication(cfg Config) (*Application, error) {
 	// NTP repo
 	var ntpEventRepo ports.NTPEventRepository
 	if cfg.EventsFile != "" {
-		repo, err := persistence.NewJSONLinesNTPRepository(cfg.EventsFile + ".ntp")
+		repo, err := persistence.NewJSONLinesNTPRepository(cfg.EventsFile)
 		if err != nil {
 			return nil, fmt.Errorf("open ntp events file: %w", err)
 		}
 		ntpEventRepo = repo
-		logger.Info("NTP events will be persisted to " + cfg.EventsFile + ".ntp")
+		logger.Info("NTP events will be persisted to " + cfg.EventsFile)
 	} else {
 		ntpEventRepo = persistence.NewNTPInMemoryRepository()
 	}

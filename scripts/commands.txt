@@ -1,0 +1,5 @@
+one ip bucket test
+sudo scripts/ntpspoof.sh --base 127.0.0. --start 2 --count 50 --per-source 30 --victim 127.0.0.1
+
+multiple ip spoof same ip test
+sudo scripts/sameipspoof.sh --spoof 127.0.0.55 --victim 127.0.0.1 --workers 10 --count 30 --interval 0.01
