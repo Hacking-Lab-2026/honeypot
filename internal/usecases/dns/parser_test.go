@@ -1,11 +1,11 @@
-package dns_test
+﻿package dns_test
 
 import (
 	"encoding/binary"
 	"strings"
 	"testing"
 
-	dnsusecase "github.com/hacking-lab/ddos-honeypot/internal/usecases/dns"
+	dnsusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/dns"
 )
 
 // buildRawQuery constructs a minimal but valid DNS query wire-format message.

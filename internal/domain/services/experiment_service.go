@@ -1,4 +1,4 @@
-package services
+﻿package services
 
 import (
 	"fmt"
@@ -6,17 +6,17 @@ import (
 	"math"
 	"sort"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/models"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 )
 
 const weightEpsilon = 0.001
 
 // ExperimentService contains business logic for experiment management.
-// It is pure Go — no repository or network dependencies.
+// It is pure Go â€” no repository or network dependencies.
 type ExperimentService struct{}
 
 // AssignVariant deterministically picks a variant for the given sourceIP in an experiment.
-// The same (experimentID, sourceIP) pair always returns the same variant — no randomness at call
+// The same (experimentID, sourceIP) pair always returns the same variant â€” no randomness at call
 // time. Consistent hashing is used so that adding more source IPs does not reshuffle existing
 // assignments.
 func (s *ExperimentService) AssignVariant(experimentID, sourceIP string, variants []*models.Variant) (*models.Variant, error) {
@@ -81,19 +81,30 @@ func (s *ExperimentService) ValidateExperiment(exp *models.Experiment, variants 
 				return fmt.Errorf("variant %q has no assigned IPs (required for destination mode)", v.Name)
 			}
 		}
-		return nil
+	} else {
+		// Source mode (default): weights must sum to 1.0.
+		total := 0.0
+		for _, v := range variants {
+			if v.Weight < 0 || v.Weight > 1 {
+				return fmt.Errorf("variant %q has invalid weight %.4f (must be in [0, 1])", v.Name, v.Weight)
+			}
+			total += v.Weight
+		}
+		if math.Abs(total-1.0) > weightEpsilon {
+			return fmt.Errorf("variant weights must sum to 1.0, got %.6f", total)
+		}
 	}
 
-	// Source mode (default): weights must sum to 1.0.
-	total := 0.0
+	// Per-variant protocol config validation.
 	for _, v := range variants {
-		if v.Weight < 0 || v.Weight > 1 {
-			return fmt.Errorf("variant %q has invalid weight %.4f (must be in [0, 1])", v.Name, v.Weight)
+		if v.NTPConfig.ResponseMode != "" {
+			if v.NTPConfig.ResponseMode != "minimal" && v.NTPConfig.ResponseMode != "amplified" {
+				return fmt.Errorf("variant %q has invalid NTP response mode %q", v.Name, v.NTPConfig.ResponseMode)
+			}
+			if v.NTPConfig.ResponseMode == "amplified" && v.NTPConfig.NumPeers <= 0 {
+				return fmt.Errorf("variant %q has NTP response mode \"amplified\" but NumPeers must be > 0", v.Name)
+			}
 		}
-		total += v.Weight
-	}
-	if math.Abs(total-1.0) > weightEpsilon {
-		return fmt.Errorf("variant weights must sum to 1.0, got %.6f", total)
 	}
 
 	return nil

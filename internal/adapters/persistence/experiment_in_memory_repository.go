@@ -1,10 +1,10 @@
-package persistence
+﻿package persistence
 
 import (
 	"fmt"
 	"sync"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/models"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 )
 
 // ExperimentInMemoryRepository implements ports.ExperimentRepository.
@@ -14,7 +14,7 @@ type ExperimentInMemoryRepository struct {
 	mu          sync.RWMutex
 	experiments map[string]*models.Experiment
 	variants    map[string]*models.Variant            // keyed by variant ID
-	byExp       map[string][]string                   // experimentID → []variantID
+	byExp       map[string][]string                   // experimentID â†’ []variantID
 }
 
 // NewExperimentInMemoryRepository creates a new empty repository.

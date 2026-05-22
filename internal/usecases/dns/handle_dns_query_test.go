@@ -1,12 +1,12 @@
-package dns_test
+﻿package dns_test
 
 import (
 	"encoding/binary"
 	"testing"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/models"
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/services"
-	dnsusecase "github.com/hacking-lab/ddos-honeypot/internal/usecases/dns"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/services"
+	dnsusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/dns"
 )
 
 // ---- mock implementations ----

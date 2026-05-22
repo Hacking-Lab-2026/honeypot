@@ -1,17 +1,17 @@
-package services_test
+﻿package services_test
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/models"
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/services"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/services"
 )
 
 func makeVariants(expID string, weights []float64) []*models.Variant {
 	variants := make([]*models.Variant, len(weights))
 	for i, w := range weights {
-		id := fmt.Sprintf("%c", 'A'+i) // "A", "B", "C", …
+		id := fmt.Sprintf("%c", 'A'+i) // "A", "B", "C", â€¦
 		variants[i] = &models.Variant{
 			ID:           id,
 			ExperimentID: expID,
@@ -73,10 +73,10 @@ func TestAssignVariant_WeightedDistribution(t *testing.T) {
 		counts[v.ID]++
 	}
 	// Variant "A" (weight 0.9) should get roughly 900 / 1000.
-	// Generous ±15% tolerance to account for hash non-uniformity.
+	// Generous Â±15% tolerance to account for hash non-uniformity.
 	aCount := counts["A"]
 	if aCount < 750 || aCount > 1000 {
-		t.Errorf("variant A assigned to %d/%d (want ~900, allowed 750–1000)", aCount, total)
+		t.Errorf("variant A assigned to %d/%d (want ~900, allowed 750â€“1000)", aCount, total)
 	}
 }
 

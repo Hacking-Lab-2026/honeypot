@@ -1,27 +1,21 @@
-package app
+﻿package app
 
 import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/api"
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/handlers"
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/logging"
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/persistence"
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/ratelimit"
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/servers"
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/services"
-	dnsusecase "github.com/hacking-lab/ddos-honeypot/internal/usecases/dns"
-	expusecase "github.com/hacking-lab/ddos-honeypot/internal/usecases/experiment"
-	"github.com/hacking-lab/ddos-honeypot/internal/usecases/probe"
-	"github.com/hacking-lab/ddos-honeypot/internal/ports"
+	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/api"
 	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/handlers"
 	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/logging"
 	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/persistence"
 	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/ratelimit"
 	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/servers"
 	"github.com/Hacking-Lab-2026/honeypot/internal/domain/services"
+	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
+	dnsusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/dns"
+	expusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/experiment"
 	"github.com/Hacking-Lab-2026/honeypot/internal/usecases/probe"
 )
 
@@ -46,22 +40,37 @@ type Application struct {
 	dnsServers        []*servers.DNSServer
 	coordinatorServer *api.CoordinatorServer
 	logger            *logging.ConsoleLogger
+	classifier        ports.Classifier
 }
 
 // NewApplication creates and initialises the application with all dependencies wired.
-// This is the single wiring point — no other file may perform dependency injection.
+// This is the single wiring point â€" no other file may perform dependency injection.
 func NewApplication(cfg Config) (*Application, error) {
 	logger := &logging.ConsoleLogger{}
 	rateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
+	classifier := services.NewClassifierService()
 
-	// ── Probe (generic UDP) server ────────────────────────────────────────────
+	// ── Probe (generic UDP) server ────────────────────────────────────────────────
 	probeRepo := persistence.NewInMemoryEventRepository()
 	probeService := &services.ProbeService{}
 	processProbeUsecase := probe.NewProcessProbeUsecase(probeService, probeRepo, logger, rateLimiter)
 	probeHandler := handlers.NewProbeHandler(processProbeUsecase)
 	probeServer := servers.NewServer(cfg.ProbeAddr, probeHandler, logger)
 
-	// ── Experiment / coordinator ──────────────────────────────────────────────
+	// ── DNS event repository (in-memory or file-backed) ───────────────────────────
+	var dnsEventRepo ports.DNSEventRepository
+	if cfg.EventsFile != "" {
+		repo, err := persistence.NewJSONLinesDNSRepository(cfg.EventsFile)
+		if err != nil {
+			return nil, fmt.Errorf("open events file: %w", err)
+		}
+		dnsEventRepo = repo
+		logger.Info("DNS events will be persisted to " + cfg.EventsFile)
+	} else {
+		dnsEventRepo = persistence.NewDNSInMemoryRepository()
+	}
+
+	// ── Experiment / coordinator ──────────────────────────────────────────────────
 	experimentRepo := persistence.NewExperimentInMemoryRepository()
 	assignmentRepo := persistence.NewAssignmentInMemoryRepository()
 	experimentService := &services.ExperimentService{}
@@ -79,24 +88,12 @@ func NewApplication(cfg Config) (*Application, error) {
 		getExperimentUsecase,
 		updateStatusUsecase,
 		logger,
+		dnsEventRepo,
 	)
 
-	// ── DNS event repository (in-memory or file-backed) ───────────────────────
-	var dnsEventRepo ports.DNSEventRepository
-	if cfg.EventsFile != "" {
-		repo, err := persistence.NewJSONLinesDNSRepository(cfg.EventsFile)
-		if err != nil {
-			return nil, fmt.Errorf("open events file: %w", err)
-		}
-		dnsEventRepo = repo
-		logger.Info("DNS events will be persisted to " + cfg.EventsFile)
-	} else {
-		dnsEventRepo = persistence.NewDNSInMemoryRepository()
-	}
-
-	// ── DNS honeypot servers — one per honeypot IP ────────────────────────────
+	// ── DNS honeypot servers – one per honeypot IP ────────────────────────────────
 	dnsService := &services.DNSService{}
-	handleDNSUsecase := dnsusecase.NewHandleDNSQueryUsecase(dnsService, dnsEventRepo, logger, rateLimiter)
+	handleDNSUsecase := dnsusecase.NewHandleDNSQueryUsecase(dnsService, dnsEventRepo, logger, rateLimiter, classifier)
 	dnsHandler := handlers.NewDNSHandler(handleDNSUsecase, assignVariantUsecase, logger)
 
 	ips := parseIPs(cfg.HoneypotIPs)
@@ -119,6 +116,7 @@ func NewApplication(cfg Config) (*Application, error) {
 		dnsServers:        dnsServers,
 		coordinatorServer: coordinatorServer,
 		logger:            logger,
+		classifier:        classifier,
 	}, nil
 }
 
@@ -150,6 +148,19 @@ func (app *Application) Start(ctx context.Context) error {
 			}
 		}()
 	}
+
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				app.classifier.Cleanup(10 * time.Minute)
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 
 	select {
 	case err := <-errCh:

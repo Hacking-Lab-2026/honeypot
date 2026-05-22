@@ -1,6 +1,10 @@
 package ports
 
-import "github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
+import (
+	"time"
+
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
+)
 
 // Logger defines the interface for logging implementations.
 type Logger interface {
@@ -43,4 +47,11 @@ type AssignmentRepository interface {
 	Save(a *models.Assignment) error
 	FindBySourceAndExperiment(sourceIP, experimentID string) (*models.Assignment, error)
 	ListByExperiment(experimentID string) ([]*models.Assignment, error)
+}
+
+// Classifier classifies an incoming probe by source IP and DNS query type string.
+// Implementations must be safe for concurrent use.
+type Classifier interface {
+	Classify(sourceIP string, queryType string) string
+	Cleanup(maxAge time.Duration)
 }

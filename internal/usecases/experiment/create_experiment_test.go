@@ -1,12 +1,12 @@
-package experiment_test
+﻿package experiment_test
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/models"
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/services"
-	expusecase "github.com/hacking-lab/ddos-honeypot/internal/usecases/experiment"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/services"
+	expusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/experiment"
 )
 
 // ---- mocks ----

@@ -1,12 +1,12 @@
-package experiment
+﻿package experiment
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/models"
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/services"
-	"github.com/hacking-lab/ddos-honeypot/internal/ports"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/services"
+	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 )
 
 // AssignVariantUsecase resolves the correct variant for a given (experiment, sourceIP) pair,
@@ -62,7 +62,7 @@ func (u *AssignVariantUsecase) Execute(sourceIP, destinationIP string) (*models.
 		return variant, nil
 	}
 
-	// No existing assignment — create one deterministically.
+	// No existing assignment â€” create one deterministically.
 	assigned, err := u.experimentService.AssignVariant(exp.ID, sourceIP, variants)
 	if err != nil {
 		return nil, fmt.Errorf("variant assignment failed: %w", err)

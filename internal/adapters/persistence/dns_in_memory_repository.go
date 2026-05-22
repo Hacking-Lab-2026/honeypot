@@ -1,10 +1,10 @@
-package persistence
+﻿package persistence
 
 import (
 	"fmt"
 	"sync"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/models"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 )
 
 // DNSInMemoryRepository implements ports.DNSEventRepository using an in-memory slice.

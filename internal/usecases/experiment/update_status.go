@@ -1,10 +1,10 @@
-package experiment
+﻿package experiment
 
 import (
 	"fmt"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/models"
-	"github.com/hacking-lab/ddos-honeypot/internal/ports"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
+	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 )
 
 // UpdateStatusUsecase sets an experiment's status to active or stopped.
