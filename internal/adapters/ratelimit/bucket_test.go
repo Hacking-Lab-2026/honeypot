@@ -1,4 +1,4 @@
-package test
+package ratelimit_test
 
 import (
 	"testing"
