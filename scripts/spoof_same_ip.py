@@ -1,7 +1,7 @@
 import argparse
 import time
 
-from scapy.all import IP, UDP, send
+from scapy.all import *
 
 NTP_PAYLOAD = bytes([0x1B] + [0] * 47)
 
