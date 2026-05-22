@@ -26,6 +26,8 @@ func newTestServer(t *testing.T) *api.CoordinatorServer {
 	experimentRepo := persistence.NewExperimentInMemoryRepository()
 	assignmentRepo := persistence.NewAssignmentInMemoryRepository()
 	experimentService := &services.ExperimentService{}
+	dnsRepo := persistence.NewDNSInMemoryRepository()
+	ntpRepo := persistence.NewNTPInMemoryRepository()
 
 	return api.NewCoordinatorServer(
 		":0",
@@ -34,6 +36,8 @@ func newTestServer(t *testing.T) *api.CoordinatorServer {
 		expusecase.NewGetExperimentUsecase(experimentRepo, assignmentRepo),
 		expusecase.NewUpdateStatusUsecase(experimentRepo, logger),
 		logger,
+		dnsRepo,
+		ntpRepo,
 	)
 }
 
