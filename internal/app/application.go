@@ -52,13 +52,15 @@ type Application struct {
 // This is the single wiring point â€" no other file may perform dependency injection.
 func NewApplication(cfg Config) (*Application, error) {
 	logger := &logging.ConsoleLogger{}
-	rateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
+	probeRateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
+	dnsRateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
+	ntpRateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
 	classifier := services.NewClassifierService()
 
 	// ── Probe (generic UDP) server ────────────────────────────────────────────────
 	probeRepo := persistence.NewInMemoryEventRepository()
 	probeService := &services.ProbeService{}
-	processProbeUsecase := probe.NewProcessProbeUsecase(probeService, probeRepo, logger, rateLimiter)
+	processProbeUsecase := probe.NewProcessProbeUsecase(probeService, probeRepo, logger, probeRateLimiter)
 	probeHandler := handlers.NewProbeHandler(processProbeUsecase)
 	probeServer := servers.NewServer(cfg.ProbeAddr, probeHandler, logger)
 
@@ -112,7 +114,7 @@ func NewApplication(cfg Config) (*Application, error) {
 
 	// ── DNS honeypot servers – one per honeypot IP ────────────────────────────────
 	dnsService := &services.DNSService{}
-	handleDNSUsecase := dnsusecase.NewHandleDNSQueryUsecase(dnsService, dnsEventRepo, logger, rateLimiter, classifier)
+	handleDNSUsecase := dnsusecase.NewHandleDNSQueryUsecase(dnsService, dnsEventRepo, logger, dnsRateLimiter, classifier)
 	dnsHandler := handlers.NewDNSHandler(handleDNSUsecase, assignVariantUsecase, logger)
 
 	ips := parseIPs(cfg.HoneypotIPs)
@@ -132,7 +134,7 @@ func NewApplication(cfg Config) (*Application, error) {
 
 	// ntp honeypot server
 	ntpService := &services.NTPService{}
-	handleNTPUsecase := ntpusecase.NewHandleNTPRequestUsecase(ntpService, ntpEventRepo, logger, rateLimiter, classifier)
+	handleNTPUsecase := ntpusecase.NewHandleNTPRequestUsecase(ntpService, ntpEventRepo, logger, ntpRateLimiter, classifier)
 	ntpHandler := handlers.NewNTPHandler(handleNTPUsecase, assignVariantUsecase, logger)
 
 	ntpPort := cfg.NTPPort
