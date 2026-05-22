@@ -30,6 +30,12 @@ type DNSEventRepository interface {
 	List() ([]*models.DNSEvent, error)
 }
 
+// NTPEventRepository defines the interface for NTP probe event persistence.
+type NTPEventRepository interface {
+	Save(event *models.NTPEvent) error
+	List() ([]*models.NTPEvent, error)
+}
+
 // ExperimentRepository defines CRUD operations for experiments and their variants.
 type ExperimentRepository interface {
 	SaveExperiment(exp *models.Experiment) error

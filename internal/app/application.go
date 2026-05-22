@@ -16,6 +16,7 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 	dnsusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/dns"
 	expusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/experiment"
+	ntpusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/ntp"
 	"github.com/Hacking-Lab-2026/honeypot/internal/usecases/probe"
 )
 
@@ -32,15 +33,19 @@ type Config struct {
 	// EventsFile is an optional path to a JSON-lines file for DNS event persistence.
 	// When empty, an in-memory repository is used.
 	EventsFile string
+	// NTPPort is the port NTP servers listen on default 123
+	NTPPort string
 }
 
 // Application sets up and wires all dependencies.
 type Application struct {
 	probeServer       *servers.Server
 	dnsServers        []*servers.DNSServer
+	ntpServers        []*servers.NTPServer
 	coordinatorServer *api.CoordinatorServer
 	logger            *logging.ConsoleLogger
 	classifier        ports.Classifier
+	ntpEventRepo      ports.NTPEventRepository
 }
 
 // NewApplication creates and initialises the application with all dependencies wired.
@@ -70,6 +75,19 @@ func NewApplication(cfg Config) (*Application, error) {
 		dnsEventRepo = persistence.NewDNSInMemoryRepository()
 	}
 
+	// NTP repo
+	var ntpEventRepo ports.NTPEventRepository
+	if cfg.EventsFile != "" {
+		repo, err := persistence.NewJSONLinesNTPRepository(cfg.EventsFile + ".ntp")
+		if err != nil {
+			return nil, fmt.Errorf("open ntp events file: %w", err)
+		}
+		ntpEventRepo = repo
+		logger.Info("NTP events will be persisted to " + cfg.EventsFile + ".ntp")
+	} else {
+		ntpEventRepo = persistence.NewNTPInMemoryRepository()
+	}
+
 	// ── Experiment / coordinator ──────────────────────────────────────────────────
 	experimentRepo := persistence.NewExperimentInMemoryRepository()
 	assignmentRepo := persistence.NewAssignmentInMemoryRepository()
@@ -89,6 +107,7 @@ func NewApplication(cfg Config) (*Application, error) {
 		updateStatusUsecase,
 		logger,
 		dnsEventRepo,
+		ntpEventRepo,
 	)
 
 	// ── DNS honeypot servers – one per honeypot IP ────────────────────────────────
@@ -111,13 +130,36 @@ func NewApplication(cfg Config) (*Application, error) {
 		dnsServers[i] = servers.NewDNSServer(addr, ip, dnsHandler, logger)
 	}
 
+	// ntp honeypot server
+	ntpService := &services.NTPService{}
+	handleNTPUsecase := ntpusecase.NewHandleNTPRequestUsecase(ntpService, ntpEventRepo, logger, rateLimiter, classifier)
+	ntpHandler := handlers.NewNTPHandler(handleNTPUsecase, assignVariantUsecase, logger)
+
+	ntpPort := cfg.NTPPort
+	if ntpPort == "" {
+		ntpPort = "123"
+	}
+
+	ntpServers := make([]*servers.NTPServer, len(ips))
+	for i, ip := range ips {
+		addr := ip + ":" + ntpPort
+		ntpServers[i] = servers.NewNTPServer(addr, ip, ntpHandler, logger)
+	}
+
 	return &Application{
 		probeServer:       probeServer,
 		dnsServers:        dnsServers,
+		ntpServers:        ntpServers,
 		coordinatorServer: coordinatorServer,
 		logger:            logger,
 		classifier:        classifier,
+		ntpEventRepo:      ntpEventRepo,
 	}, nil
+}
+
+// NTPEventRepository returns the application NTP event repository (useful for tests).
+func (a *Application) NTPEventRepository() ports.NTPEventRepository {
+	return a.ntpEventRepo
 }
 
 // Start launches all servers concurrently and blocks until ctx is cancelled or one server
@@ -125,7 +167,7 @@ func NewApplication(cfg Config) (*Application, error) {
 func (app *Application) Start(ctx context.Context) error {
 	app.logger.Info("Honeypot application starting")
 
-	serverCount := 2 + len(app.dnsServers) // probe + coordinator + dns servers
+	serverCount := 2 + len(app.dnsServers) + len(app.ntpServers) // probe + coordinator + dns + ntp servers
 	errCh := make(chan error, serverCount)
 
 	go func() {
@@ -145,6 +187,15 @@ func (app *Application) Start(ctx context.Context) error {
 		go func() {
 			if err := ds.Start(ctx); err != nil {
 				errCh <- fmt.Errorf("dns server %s: %w", ds.Addr(), err)
+			}
+		}()
+	}
+
+	for _, ns := range app.ntpServers {
+		ns := ns
+		go func() {
+			if err := ns.Start(ctx); err != nil {
+				errCh <- fmt.Errorf("ntp server %s: %w", ns.Addr(), err)
 			}
 		}()
 	}

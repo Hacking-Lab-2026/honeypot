@@ -21,10 +21,11 @@ type CoordinatorServer struct {
 	updateStatus     *expusecase.UpdateStatusUsecase
 	logger           ports.Logger
 	dnsEventRepo     ports.DNSEventRepository
+	ntpEventRepo     ports.NTPEventRepository
 }
 
 // NewCoordinatorServer creates the HTTP coordinator server.
-// The optional dnsEventRepo parameter enables the GET /metrics endpoint.
+// The optional dnsEventRepo and ntpEventRepo parameters enable the GET /metrics endpoint.
 func NewCoordinatorServer(
 	addr string,
 	createExperiment *expusecase.CreateExperimentUsecase,
@@ -32,12 +33,9 @@ func NewCoordinatorServer(
 	getExperiment *expusecase.GetExperimentUsecase,
 	updateStatus *expusecase.UpdateStatusUsecase,
 	logger ports.Logger,
-	dnsEventRepo ...ports.DNSEventRepository,
+	dnsEventRepo ports.DNSEventRepository,
+	ntpEventRepo ports.NTPEventRepository,
 ) *CoordinatorServer {
-	var repo ports.DNSEventRepository
-	if len(dnsEventRepo) > 0 {
-		repo = dnsEventRepo[0]
-	}
 	return &CoordinatorServer{
 		addr:             addr,
 		createExperiment: createExperiment,
@@ -45,7 +43,8 @@ func NewCoordinatorServer(
 		getExperiment:    getExperiment,
 		updateStatus:     updateStatus,
 		logger:           logger,
-		dnsEventRepo:     repo,
+		dnsEventRepo:     dnsEventRepo,
+		ntpEventRepo:     ntpEventRepo,
 	}
 }
 
@@ -184,8 +183,10 @@ func (s *CoordinatorServer) handleUpdateStatus(w http.ResponseWriter, r *http.Re
 }
 
 type metricsResponse struct {
-	ProbeCounts map[string]int `json:"probe_counts"`
-	Total       int            `json:"total"`
+	ProbeCounts    map[string]int `json:"probe_counts"`
+	Total          int            `json:"total"`
+	NTPProbeCounts map[string]int `json:"ntp_probe_counts,omitempty"`
+	NTPTotal       int            `json:"ntp_total,omitempty"`
 }
 
 func (s *CoordinatorServer) handleMetrics(w http.ResponseWriter, r *http.Request) {
@@ -202,7 +203,20 @@ func (s *CoordinatorServer) handleMetrics(w http.ResponseWriter, r *http.Request
 			total++
 		}
 	}
-	writeJSON(w, http.StatusOK, metricsResponse{ProbeCounts: counts, Total: total})
+	ntpCounts := map[string]int{"scanner": 0, "attacker": 0, "noise": 0}
+	ntpTotal := 0
+	if s.ntpEventRepo != nil {
+		events, err := s.ntpEventRepo.List()
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		for _, ev := range events {
+			ntpCounts[ev.ProbeType]++
+			ntpTotal++
+		}
+	}
+	writeJSON(w, http.StatusOK, metricsResponse{ProbeCounts: counts, Total: total, NTPProbeCounts: ntpCounts, NTPTotal: ntpTotal})
 }
 
 // ---- helpers ----
