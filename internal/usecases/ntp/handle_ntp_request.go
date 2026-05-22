@@ -42,11 +42,6 @@ func NewHandleNTPRequestUsecase(
 
 // Execute handles a raw NTP payload and returns the response bytes.
 func (u *HandleNTPRequestUsecase) Execute(sourceIP string, sourcePort int, destinationIP string, payload []byte, cfg models.NTPConfig, variantID string) ([]byte, error) {
-	if !u.rateLimiter.Allow(sourceIP, 0) {
-		u.logger.Info("NTP request from " + sourceIP + " rate limited")
-		return nil, nil
-	}
-
 	query, err := ParseNTPRequest(payload)
 	if err != nil {
 		u.logger.Error(fmt.Sprintf("malformed NTP request from %s: %v", sourceIP, err))
@@ -57,6 +52,11 @@ func (u *HandleNTPRequestUsecase) Execute(sourceIP string, sourcePort int, desti
 	if err != nil {
 		u.logger.Error(fmt.Sprintf("failed to build NTP response for %s: %v", sourceIP, err))
 		return nil, err
+	}
+
+	if !u.rateLimiter.Allow(sourceIP, len(response.Payload)) {
+		u.logger.Info("NTP request from " + sourceIP + " rate limited on egress")
+		return nil, nil
 	}
 
 	amp := 0.0
