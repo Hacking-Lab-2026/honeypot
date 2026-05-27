@@ -29,7 +29,7 @@ go build -o honeypot ./cmd/server
 
 ```bash
 HONEYPOT_IPS="127.0.0.1,127.0.0.2" \
-DNS_PORT=5354 \
+DNS_PORT=53 \
 EVENTS_FILE=/tmp/honeypot_events.jsonl \
 ./honeypot
 ```
@@ -95,12 +95,12 @@ resolves its variant dynamically, no server restart required.
 
 Query the control IP:
 ```bash
-dig @127.0.0.1 -p 5354 example.com A +noedns +notcp
+dig @127.0.0.1 -p 53 example.com A +noedns +notcp
 ```
 
 Query the treatment IP:
 ```bash
-dig @127.0.0.2 -p 5354 example.com A +noedns +notcp
+dig @127.0.0.2 -p 53 example.com A +noedns +notcp
 ```
 
 Check the last line of each output:
@@ -149,7 +149,7 @@ Send 50 queries in rapid succession from the same source:
 
 ```bash
 for i in $(seq 1 50); do
-  dig @127.0.0.2 -p 5354 example.com A +noedns +notcp +time=1 2>&1 | grep -E "MSG SIZE|timed out|no servers"
+  dig @127.0.0.2 -p 53 example.com A +noedns +notcp +time=1 2>&1 | grep -E "MSG SIZE|timed out|no servers"
 done
 ```
 
@@ -194,8 +194,8 @@ Open two terminals. In terminal 1:
 
 ```bash
 rm -f /tmp/honeypot_events.jsonl
-HONEYPOT_IPS="127.0.0.1,127.0.0.2" \
-DNS_PORT=5354 \
+sudo HONEYPOT_IPS="127.0.0.1,127.0.0.2" \
+DNS_PORT=53 \
 EVENTS_FILE=/tmp/honeypot_events.jsonl \
 ./honeypot
 ```
@@ -240,7 +240,7 @@ curl -s -X POST http://localhost:8080/experiments/$ID/start | python3 -m json.to
 Query the treatment IP:
 
 ```bash
-dig @127.0.0.2 -p 5354 example.com A +noedns +notcp
+dig @127.0.0.2 -p 53 example.com A +noedns +notcp
 ```
 
 Expected: TXT records contain readable SPF/DKIM strings instead of `AAAA...`, and the final line still reads:
@@ -317,8 +317,8 @@ Start the server with a fresh event log:
 
 ```bash
 rm -f /tmp/honeypot_events.jsonl
-HONEYPOT_IPS="127.0.0.1,127.0.0.2" \
-DNS_PORT=5354 \
+sudo HONEYPOT_IPS="127.0.0.1,127.0.0.2" \
+DNS_PORT=53 \
 EVENTS_FILE=/tmp/honeypot_events.jsonl \
 go run ./cmd/server/main.go
 ```
@@ -327,16 +327,16 @@ In a second terminal, trigger each classification:
 
 ```bash
 # ANY query: "attacker"
-dig @127.0.0.1 -p 5354 example.com ANY +noedns +notcp
+dig @127.0.0.1 -p 53 example.com ANY +noedns +notcp
 
 # standard A query: "noise"
-dig @127.0.0.1 -p 5354 example.com A +noedns +notcp
+dig @127.0.0.1 -p 53 example.com A +noedns +notcp
 
 # 26 rapid queries: 26th and beyond are "attacker"
 for i in $(seq 1 26); do
-  dig @127.0.0.1 -p 5354 example.com A +noedns +notcp +time=1 > /dev/null 2>&1
+  dig @127.0.0.1 -p 53 example.com A +noedns +notcp +time=1 > /dev/null 2>&1
 done
-dig @127.0.0.1 -p 5354 example.com A +noedns +notcp
+dig @127.0.0.1 -p 53 example.com A +noedns +notcp
 ```
 
 Inspect the event log and confirm `probe_type` is set on every line:

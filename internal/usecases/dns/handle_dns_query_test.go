@@ -134,7 +134,7 @@ func TestHandleDNSQuery_Execute_ResponseTxIDMatchesQuery(t *testing.T) {
 	uc := dnsusecase.NewHandleDNSQueryUsecase(&services.DNSService{}, repo, logger, allowAllLimiter{})
 
 	raw := buildRawQuery(0xBEEF, "test.local", 255)
-	resp, err := uc.Execute("2.2.2.2", 5353, "10.0.0.1", raw, models.DNSConfig{ResponseMode: models.Minimal}, "")
+	resp, err := uc.Execute("2.2.2.2", 53, "10.0.0.1", raw, models.DNSConfig{ResponseMode: models.Minimal}, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

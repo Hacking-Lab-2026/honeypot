@@ -22,7 +22,7 @@ import (
 
 // Config holds all runtime configuration for the application.
 type Config struct {
-	ProbeAddr       string // UDP probe server address (e.g. "127.0.0.1:5353")
+	ProbeAddr       string // UDP probe server address (e.g. "127.0.0.1:53")
 	CoordinatorAddr string // HTTP coordinator address (e.g. "0.0.0.0:8080")
 
 	// HoneypotIPs is a comma-separated list of IP addresses to bind DNS servers to.
