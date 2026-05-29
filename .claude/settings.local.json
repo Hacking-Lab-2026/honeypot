@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell([System.Environment]::GetEnvironmentVariable\\(\"GOROOT\",\"Machine\"\\); [System.Environment]::GetEnvironmentVariable\\(\"GOPATH\",\"Machine\"\\); [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"Machine\"\\) -split \";\" | Select-String -Pattern \"go\" -CaseSensitive:$false)"
+    ]
+  }
+}

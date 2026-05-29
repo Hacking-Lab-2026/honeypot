@@ -25,7 +25,7 @@ var _ = Describe("InMemoryEventRepository", func() {
 		testEvent = &models.ProbeEvent{
 			ID:        "test-1",
 			SourceIP:  "192.168.1.1",
-			Port:      5353,
+			Port:      53,
 			Protocol:  "UDP",
 			Payload:   "test",
 			Timestamp: time.Now(),

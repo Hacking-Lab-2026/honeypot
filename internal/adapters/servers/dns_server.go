@@ -1,14 +1,14 @@
-package servers
+﻿package servers
 
 import (
 	"context"
 	"net"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/handlers"
-	"github.com/hacking-lab/ddos-honeypot/internal/ports"
+	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/handlers"
+	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 )
 
-const dnsBufferSize = 512 // RFC 1035 §2.3.4 — standard DNS UDP payload limit
+const dnsBufferSize = 512 // RFC 1035 Â§2.3.4 â€” standard DNS UDP payload limit
 
 // DNSServer listens for UDP DNS queries on a single address and dispatches each packet to a goroutine.
 type DNSServer struct {

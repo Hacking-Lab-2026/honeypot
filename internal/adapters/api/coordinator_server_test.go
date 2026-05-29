@@ -1,4 +1,4 @@
-package api_test
+﻿package api_test
 
 import (
 	"bytes"
@@ -7,11 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/api"
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/persistence"
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/models"
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/services"
-	expusecase "github.com/hacking-lab/ddos-honeypot/internal/usecases/experiment"
+	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/api"
+	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/persistence"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/services"
+	expusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/experiment"
 )
 
 type testLogger struct{}
@@ -26,6 +26,8 @@ func newTestServer(t *testing.T) *api.CoordinatorServer {
 	experimentRepo := persistence.NewExperimentInMemoryRepository()
 	assignmentRepo := persistence.NewAssignmentInMemoryRepository()
 	experimentService := &services.ExperimentService{}
+	dnsRepo := persistence.NewDNSInMemoryRepository()
+	ntpRepo := persistence.NewNTPInMemoryRepository()
 
 	return api.NewCoordinatorServer(
 		":0",
@@ -34,6 +36,8 @@ func newTestServer(t *testing.T) *api.CoordinatorServer {
 		expusecase.NewGetExperimentUsecase(experimentRepo, assignmentRepo),
 		expusecase.NewUpdateStatusUsecase(experimentRepo, logger),
 		logger,
+		dnsRepo,
+		ntpRepo,
 	)
 }
 

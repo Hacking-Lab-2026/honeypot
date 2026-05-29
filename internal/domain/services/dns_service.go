@@ -1,11 +1,11 @@
-package services
+﻿package services
 
 import (
 	"encoding/binary"
 	"fmt"
 	"strings"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/models"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 )
 
 const (
@@ -19,7 +19,7 @@ const (
 	dnsTypeTXT uint16 = 16
 	dnsClassIN uint16 = 1
 
-	// 203.0.113.1 — TEST-NET-3 (RFC 5737), documentation-only range.
+	// 203.0.113.1 â€” TEST-NET-3 (RFC 5737), documentation-only range.
 	aIP0 byte = 203
 	aIP1 byte = 0
 	aIP2 byte = 113
@@ -32,6 +32,29 @@ const (
 	realisticTTL uint32 = 300
 )
 
+// realisticTXTPayloads contains 9 plausible DNS TXT record strings, each padded to exactly
+// 200 bytes. They mimic SPF, DKIM, and domain-verification records seen on real domains,
+// making amplified responses less obviously synthetic when inspected by an attacker.
+var realisticTXTPayloads = func() [9]string {
+	pad := func(s string) string {
+		if len(s) >= 200 {
+			return s[:200]
+		}
+		return s + strings.Repeat(" ", 200-len(s))
+	}
+	return [9]string{
+		pad("v=spf1 include:_spf.google.com include:_spf.mailgun.org include:sendgrid.net include:amazonses.com ip4:198.51.100.0/24 ip4:203.0.113.0/24 ~all"),
+		pad("v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC3vwBmNdrTmcYUmwxbZiNoRMNaFexaVQd8LKbTRKQgF7z4k2wPjmDlNqzRMoSBhEAJ3wXkMLr5tY8nQVpPl"),
+		pad("v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxK7iHB3bzNqfEIJYO2kVHT5bWqhDrLw7zsMSo6R9cFxDjEuVLqtBW1g8ypNfGSIXsK4mLUoQwR3zPHXmyA"),
+		pad("google-site-verification=dBw5CvburAxi537Rp88QkifsB-i2Ht5-CagA9b22gAPq3GDFsAbcDeFgHiJkLmNoPqRsTuVwXyZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+		pad("MS=ms23456789; facebook-domain-verification=abcdef1234567890abcdef1234; adobe-idp-site-verification=AABBCCDDEEFF00112233445566778899"),
+		pad("v=DKIM1; k=rsa; h=sha256; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDPnNvOorHkLBdFBqc3QHpQMrk2bWxLZ9zJkGpS8NTmOyFxE6VuRedQiI3AqsKlTbnMwz"),
+		pad("amazonses:ZGVmYXVsdA==ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz+/ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstu"),
+		pad("docusign=1b0a6754-49b1-4db5-8540-d2c12664b289; stripe-verification=ABCDEF1234567890abcdef1234567890ABCDEF123456"),
+		pad("v=spf1 include:spf.protection.outlook.com include:mail.zendesk.com include:_spf.salesforce.com include:mktomail.com ip4:192.0.2.0/24 ~all"),
+	}
+}()
+
 // DNSService builds DNS wire-format responses for the honeypot.
 // It contains only pure logic and has no knowledge of sockets or persistence.
 type DNSService struct{}
@@ -39,7 +62,10 @@ type DNSService struct{}
 // BuildResponse constructs a DNS reply according to the provided config.
 func (s *DNSService) BuildResponse(query models.DNSQuery, config models.DNSConfig) (models.DNSResponse, error) {
 	var ttl uint32
-	if config.RealisticTTL {
+	switch {
+	case config.ResponseTTL > 0:
+		ttl = uint32(config.ResponseTTL)
+	case config.RealisticTTL:
 		ttl = realisticTTL
 	}
 
@@ -54,24 +80,32 @@ func (s *DNSService) BuildResponse(query models.DNSQuery, config models.DNSConfi
 	case models.Minimal:
 		return s.buildMinimalResponse(query.TransactionID, question, ttl)
 	case models.Amplified:
-		return s.buildAmplifiedResponse(query.TransactionID, question, ttl)
+		return s.buildAmplifiedResponse(query.TransactionID, question, ttl, config.RealisticPadding)
 	default:
 		return models.DNSResponse{}, fmt.Errorf("unknown response mode: %q", config.ResponseMode)
 	}
 }
 
-// buildMinimalResponse returns one A record — small and realistic.
+// buildMinimalResponse returns one A record â€” small and realistic.
 func (s *DNSService) buildMinimalResponse(txID uint16, question []byte, ttl uint32) (models.DNSResponse, error) {
 	payload := assembleResponse(txID, 1, question, buildARecord(ttl))
 	return models.DNSResponse{Payload: payload}, nil
 }
 
 // buildAmplifiedResponse returns one A record plus many large TXT records.
-func (s *DNSService) buildAmplifiedResponse(txID uint16, question []byte, ttl uint32) (models.DNSResponse, error) {
+// When realisticPadding is true the TXT content uses plausible DNS strings;
+// otherwise it falls back to repeated "A" characters.
+func (s *DNSService) buildAmplifiedResponse(txID uint16, question []byte, ttl uint32, realisticPadding bool) (models.DNSResponse, error) {
 	var answers []byte
 	answers = append(answers, buildARecord(ttl)...)
-	for i := 1; i < amplifiedTXTCount; i++ {
-		answers = append(answers, buildTXTRecord(ttl, strings.Repeat("A", amplifiedTXTPayload))...)
+	for i := 0; i < amplifiedTXTCount-1; i++ {
+		var text string
+		if realisticPadding {
+			text = realisticTXTPayloads[i]
+		} else {
+			text = strings.Repeat("A", amplifiedTXTPayload)
+		}
+		answers = append(answers, buildTXTRecord(ttl, text)...)
 	}
 	payload := assembleResponse(txID, amplifiedTXTCount, question, answers)
 	return models.DNSResponse{Payload: payload}, nil

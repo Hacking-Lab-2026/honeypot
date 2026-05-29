@@ -1,33 +1,28 @@
-package app
+﻿package app
 
 import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/api"
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/handlers"
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/logging"
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/persistence"
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/ratelimit"
-	"github.com/hacking-lab/ddos-honeypot/internal/adapters/servers"
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/services"
-	dnsusecase "github.com/hacking-lab/ddos-honeypot/internal/usecases/dns"
-	expusecase "github.com/hacking-lab/ddos-honeypot/internal/usecases/experiment"
-	"github.com/hacking-lab/ddos-honeypot/internal/usecases/probe"
-	"github.com/hacking-lab/ddos-honeypot/internal/ports"
+	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/api"
 	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/handlers"
 	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/logging"
 	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/persistence"
 	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/ratelimit"
 	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/servers"
 	"github.com/Hacking-Lab-2026/honeypot/internal/domain/services"
+	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
+	dnsusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/dns"
+	expusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/experiment"
+	ntpusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/ntp"
 	"github.com/Hacking-Lab-2026/honeypot/internal/usecases/probe"
 )
 
 // Config holds all runtime configuration for the application.
 type Config struct {
-	ProbeAddr       string // UDP probe server address (e.g. "127.0.0.1:5353")
+	ProbeAddr       string // UDP probe server address (e.g. "127.0.0.1:53")
 	CoordinatorAddr string // HTTP coordinator address (e.g. "0.0.0.0:8080")
 
 	// HoneypotIPs is a comma-separated list of IP addresses to bind DNS servers to.
@@ -38,30 +33,64 @@ type Config struct {
 	// EventsFile is an optional path to a JSON-lines file for DNS event persistence.
 	// When empty, an in-memory repository is used.
 	EventsFile string
+	// NTPPort is the port NTP servers listen on default 123
+	NTPPort string
 }
 
 // Application sets up and wires all dependencies.
 type Application struct {
 	probeServer       *servers.Server
 	dnsServers        []*servers.DNSServer
+	ntpServers        []*servers.NTPServer
 	coordinatorServer *api.CoordinatorServer
 	logger            *logging.ConsoleLogger
+	classifier        ports.Classifier
+	ntpEventRepo      ports.NTPEventRepository
 }
 
 // NewApplication creates and initialises the application with all dependencies wired.
-// This is the single wiring point — no other file may perform dependency injection.
+// This is the single wiring point â€" no other file may perform dependency injection.
 func NewApplication(cfg Config) (*Application, error) {
 	logger := &logging.ConsoleLogger{}
-	rateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
+	probeRateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
+	dnsRateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
+	ntpRateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
+	classifier := services.NewClassifierService()
 
-	// ── Probe (generic UDP) server ────────────────────────────────────────────
+	// ── Probe (generic UDP) server ────────────────────────────────────────────────
 	probeRepo := persistence.NewInMemoryEventRepository()
 	probeService := &services.ProbeService{}
-	processProbeUsecase := probe.NewProcessProbeUsecase(probeService, probeRepo, logger, rateLimiter)
+	processProbeUsecase := probe.NewProcessProbeUsecase(probeService, probeRepo, logger, probeRateLimiter)
 	probeHandler := handlers.NewProbeHandler(processProbeUsecase)
 	probeServer := servers.NewServer(cfg.ProbeAddr, probeHandler, logger)
 
-	// ── Experiment / coordinator ──────────────────────────────────────────────
+	// ── DNS event repository (in-memory or file-backed) ───────────────────────────
+	var dnsEventRepo ports.DNSEventRepository
+	if cfg.EventsFile != "" {
+		repo, err := persistence.NewJSONLinesDNSRepository(cfg.EventsFile)
+		if err != nil {
+			return nil, fmt.Errorf("open events file: %w", err)
+		}
+		dnsEventRepo = repo
+		logger.Info("DNS events will be persisted to " + cfg.EventsFile)
+	} else {
+		dnsEventRepo = persistence.NewDNSInMemoryRepository()
+	}
+
+	// NTP repo
+	var ntpEventRepo ports.NTPEventRepository
+	if cfg.EventsFile != "" {
+		repo, err := persistence.NewJSONLinesNTPRepository(cfg.EventsFile)
+		if err != nil {
+			return nil, fmt.Errorf("open ntp events file: %w", err)
+		}
+		ntpEventRepo = repo
+		logger.Info("NTP events will be persisted to " + cfg.EventsFile)
+	} else {
+		ntpEventRepo = persistence.NewNTPInMemoryRepository()
+	}
+
+	// ── Experiment / coordinator ──────────────────────────────────────────────────
 	experimentRepo := persistence.NewExperimentInMemoryRepository()
 	assignmentRepo := persistence.NewAssignmentInMemoryRepository()
 	experimentService := &services.ExperimentService{}
@@ -79,24 +108,13 @@ func NewApplication(cfg Config) (*Application, error) {
 		getExperimentUsecase,
 		updateStatusUsecase,
 		logger,
+		dnsEventRepo,
+		ntpEventRepo,
 	)
 
-	// ── DNS event repository (in-memory or file-backed) ───────────────────────
-	var dnsEventRepo ports.DNSEventRepository
-	if cfg.EventsFile != "" {
-		repo, err := persistence.NewJSONLinesDNSRepository(cfg.EventsFile)
-		if err != nil {
-			return nil, fmt.Errorf("open events file: %w", err)
-		}
-		dnsEventRepo = repo
-		logger.Info("DNS events will be persisted to " + cfg.EventsFile)
-	} else {
-		dnsEventRepo = persistence.NewDNSInMemoryRepository()
-	}
-
-	// ── DNS honeypot servers — one per honeypot IP ────────────────────────────
+	// ── DNS honeypot servers – one per honeypot IP ────────────────────────────────
 	dnsService := &services.DNSService{}
-	handleDNSUsecase := dnsusecase.NewHandleDNSQueryUsecase(dnsService, dnsEventRepo, logger, rateLimiter)
+	handleDNSUsecase := dnsusecase.NewHandleDNSQueryUsecase(dnsService, dnsEventRepo, logger, dnsRateLimiter, classifier)
 	dnsHandler := handlers.NewDNSHandler(handleDNSUsecase, assignVariantUsecase, logger)
 
 	ips := parseIPs(cfg.HoneypotIPs)
@@ -114,12 +132,36 @@ func NewApplication(cfg Config) (*Application, error) {
 		dnsServers[i] = servers.NewDNSServer(addr, ip, dnsHandler, logger)
 	}
 
+	// ntp honeypot server
+	ntpService := &services.NTPService{}
+	handleNTPUsecase := ntpusecase.NewHandleNTPRequestUsecase(ntpService, ntpEventRepo, logger, ntpRateLimiter, classifier)
+	ntpHandler := handlers.NewNTPHandler(handleNTPUsecase, assignVariantUsecase, logger)
+
+	ntpPort := cfg.NTPPort
+	if ntpPort == "" {
+		ntpPort = "123"
+	}
+
+	ntpServers := make([]*servers.NTPServer, len(ips))
+	for i, ip := range ips {
+		addr := ip + ":" + ntpPort
+		ntpServers[i] = servers.NewNTPServer(addr, ip, ntpHandler, logger)
+	}
+
 	return &Application{
 		probeServer:       probeServer,
 		dnsServers:        dnsServers,
+		ntpServers:        ntpServers,
 		coordinatorServer: coordinatorServer,
 		logger:            logger,
+		classifier:        classifier,
+		ntpEventRepo:      ntpEventRepo,
 	}, nil
+}
+
+// NTPEventRepository returns the application NTP event repository (useful for tests).
+func (a *Application) NTPEventRepository() ports.NTPEventRepository {
+	return a.ntpEventRepo
 }
 
 // Start launches all servers concurrently and blocks until ctx is cancelled or one server
@@ -127,7 +169,7 @@ func NewApplication(cfg Config) (*Application, error) {
 func (app *Application) Start(ctx context.Context) error {
 	app.logger.Info("Honeypot application starting")
 
-	serverCount := 2 + len(app.dnsServers) // probe + coordinator + dns servers
+	serverCount := 2 + len(app.dnsServers) + len(app.ntpServers) // probe + coordinator + dns + ntp servers
 	errCh := make(chan error, serverCount)
 
 	go func() {
@@ -150,6 +192,28 @@ func (app *Application) Start(ctx context.Context) error {
 			}
 		}()
 	}
+
+	for _, ns := range app.ntpServers {
+		ns := ns
+		go func() {
+			if err := ns.Start(ctx); err != nil {
+				errCh <- fmt.Errorf("ntp server %s: %w", ns.Addr(), err)
+			}
+		}()
+	}
+
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				app.classifier.Cleanup(10 * time.Minute)
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 
 	select {
 	case err := <-errCh:

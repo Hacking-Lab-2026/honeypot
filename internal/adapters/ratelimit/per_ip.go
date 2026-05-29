@@ -5,7 +5,10 @@ import (
 	"time"
 )
 
+const egressBytesPerToken = 128
+
 // Maps IP - bucket and has bucket spec instance
+
 type IPAggregate struct {
 	cfg     IPBucketConfig
 	mutex   sync.Mutex
@@ -45,7 +48,7 @@ func NewIPAggregate(conf IPBucketConfig) *IPAggregate {
 	return aggregate
 }
 
-// Checks IP and makes/updates bucket entry and then tries to consume token
+// Checks IP and makes/updates bucket entry and then tries to consume weighted tokens.
 func (aggregate *IPAggregate) Allow(sourceIP string, responseBytes int) bool {
 	aggregate.mutex.Lock()
 	e, ok := aggregate.entries[sourceIP]
@@ -57,7 +60,20 @@ func (aggregate *IPAggregate) Allow(sourceIP string, responseBytes int) bool {
 	e.lastUsed = time.Now()
 	aggregate.mutex.Unlock()
 
-	return e.bucket.Allow()
+	return e.bucket.AllowN(egressTokenCost(responseBytes))
+}
+
+// egressTokenCost converts a response size into a token cost.
+// It always charges at least one token, and scales roughly one token per 512 bytes.
+func egressTokenCost(responseBytes int) int {
+	if responseBytes <= 0 {
+		return 1
+	}
+	cost := (responseBytes + egressBytesPerToken - 1) / egressBytesPerToken
+	if cost < 1 {
+		return 1
+	}
+	return cost
 }
 
 // scheduler helper, starts the kick_out procedure once every ttl/2

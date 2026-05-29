@@ -1,4 +1,4 @@
-package experiment
+﻿package experiment
 
 import (
 	"crypto/rand"
@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/models"
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/services"
-	"github.com/hacking-lab/ddos-honeypot/internal/ports"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/services"
+	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 )
 
 // CreateVariantInput holds the caller-supplied fields for a single variant.
@@ -18,6 +18,7 @@ type CreateVariantInput struct {
 	Weight      float64
 	AssignedIPs []string // destination-mode only
 	DNSConfig   models.DNSConfig
+	NTPConfig   models.NTPConfig
 }
 
 // CreateExperimentInput holds the caller-supplied fields for a new experiment.
@@ -75,6 +76,7 @@ func (u *CreateExperimentUsecase) Execute(input CreateExperimentInput) (*models.
 			Weight:       vi.Weight,
 			AssignedIPs:  vi.AssignedIPs,
 			DNSConfig:    vi.DNSConfig,
+			NTPConfig:    vi.NTPConfig,
 		}
 	}
 

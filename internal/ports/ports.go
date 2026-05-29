@@ -1,6 +1,10 @@
 package ports
 
-import "github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
+import (
+	"time"
+
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
+)
 
 // Logger defines the interface for logging implementations.
 type Logger interface {
@@ -26,6 +30,12 @@ type DNSEventRepository interface {
 	List() ([]*models.DNSEvent, error)
 }
 
+// NTPEventRepository defines the interface for NTP probe event persistence.
+type NTPEventRepository interface {
+	Save(event *models.NTPEvent) error
+	List() ([]*models.NTPEvent, error)
+}
+
 // ExperimentRepository defines CRUD operations for experiments and their variants.
 type ExperimentRepository interface {
 	SaveExperiment(exp *models.Experiment) error
@@ -43,4 +53,11 @@ type AssignmentRepository interface {
 	Save(a *models.Assignment) error
 	FindBySourceAndExperiment(sourceIP, experimentID string) (*models.Assignment, error)
 	ListByExperiment(experimentID string) ([]*models.Assignment, error)
+}
+
+// Classifier classifies an incoming probe by source IP and DNS query type string.
+// Implementations must be safe for concurrent use.
+type Classifier interface {
+	Classify(sourceIP string, queryType string) string
+	Cleanup(maxAge time.Duration)
 }

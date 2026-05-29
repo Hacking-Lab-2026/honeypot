@@ -1,11 +1,11 @@
-package services_test
+﻿package services_test
 
 import (
 	"encoding/binary"
 	"testing"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/models"
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/services"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/services"
 )
 
 func TestBuildResponse_Minimal(t *testing.T) {

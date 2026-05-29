@@ -1,6 +1,10 @@
 package ratelimit
 
-import "golang.org/x/time/rate"
+import (
+	"time"
+
+	"golang.org/x/time/rate"
+)
 
 // use rate lib cause it's tested
 type Bucket struct {
@@ -17,4 +21,11 @@ func NewBucket(burst int, refillPerSec float64) *Bucket {
 // Consume token from bucket, true if success
 func (b *Bucket) Allow() bool {
 	return b.inner.Allow()
+}
+
+func (b *Bucket) AllowN(tokens int) bool {
+	if tokens <= 0 {
+		return false
+	}
+	return b.inner.AllowN(time.Now(), tokens)
 }

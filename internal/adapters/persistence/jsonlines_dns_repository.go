@@ -1,4 +1,4 @@
-package persistence
+﻿package persistence
 
 import (
 	"bufio"
@@ -8,7 +8,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/models"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 )
 
 // JSONLinesDNSRepository persists DNS events to an append-only JSON-lines file.

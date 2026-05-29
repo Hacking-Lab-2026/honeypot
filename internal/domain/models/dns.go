@@ -17,6 +17,8 @@ type DNSConfig struct {
 	ResponseMode      ResponseMode `json:"response_mode"`
 	ResponseSizeBytes int          `json:"response_size_bytes"` // 0 = no override
 	RealisticTTL      bool         `json:"realistic_ttl"`
+	RealisticPadding  bool         `json:"realistic_padding"`   // use plausible TXT content instead of repeated "A"
+	ResponseTTL       int          `json:"response_ttl"`        // explicit TTL in seconds; 0 falls back to RealisticTTL
 }
 
 // DNSQuery holds fields parsed from an incoming DNS query packet.
@@ -44,5 +46,7 @@ type DNSEvent struct {
 	ResponseSizeBytes   int
 	Timestamp           time.Time
 	VariantID           string
+	ServiceName         string  // protocol/honeypot type, e.g. "dns"
+	ProbeType           string  `json:"probe_type"` // "scanner", "attacker", "noise"
 	AmplificationFactor float64 // ResponseSizeBytes / request size
 }

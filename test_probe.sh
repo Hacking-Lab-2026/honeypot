@@ -8,7 +8,7 @@ HONEYPOT_PID=$!
 sleep 1
 
 # Send a test probe
-echo "Test probe from attacker" | nc -u 127.0.0.1 5353
+echo "Test probe from attacker" | nc -u 127.0.0.1 53
 
 # Wait for honeypot to finish
 wait $HONEYPOT_PID 2>/dev/null

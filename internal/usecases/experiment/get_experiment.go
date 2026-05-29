@@ -1,16 +1,16 @@
-package experiment
+﻿package experiment
 
 import (
 	"fmt"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/models"
-	"github.com/hacking-lab/ddos-honeypot/internal/ports"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
+	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 )
 
 // ExperimentStats summarises assignment counts for an experiment.
 type ExperimentStats struct {
 	TotalAssignments int            `json:"total_assignments"`
-	PerVariant       map[string]int `json:"per_variant"` // variantID → assignment count
+	PerVariant       map[string]int `json:"per_variant"` // variantID â†’ assignment count
 }
 
 // ExperimentDetails bundles an experiment with its variants and runtime stats.

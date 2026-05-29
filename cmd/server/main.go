@@ -1,14 +1,13 @@
-package main
+﻿package main
 
 import (
 	"context"
-	"github.com/Hacking-Lab-2026/honeypot/internal/app"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/hacking-lab/ddos-honeypot/internal/app"
+	"github.com/Hacking-Lab-2026/honeypot/internal/app"
 )
 
 func main() {

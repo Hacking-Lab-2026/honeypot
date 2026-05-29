@@ -1,10 +1,10 @@
-package handlers
+﻿package handlers
 
 import (
-	"github.com/hacking-lab/ddos-honeypot/internal/domain/models"
-	dnsusecase "github.com/hacking-lab/ddos-honeypot/internal/usecases/dns"
-	expusecase "github.com/hacking-lab/ddos-honeypot/internal/usecases/experiment"
-	"github.com/hacking-lab/ddos-honeypot/internal/ports"
+	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
+	dnsusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/dns"
+	expusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/experiment"
+	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 )
 
 // defaultDNSConfig is used when no experiment is active or variant assignment fails.
@@ -43,10 +43,11 @@ func (h *DNSHandler) Handle(sourceIP string, sourcePort int, destinationIP strin
 
 	variant, err := h.assignUsecase.Execute(sourceIP, destinationIP)
 	if err != nil {
-		// No active experiment or assignment failed — use safe default silently.
+		// No active experiment or assignment failed â€” use safe default silently.
 	} else {
-		config = variant.DNSConfig
+		config = variant.GetDNSConfig()
 		variantID = variant.ID
+		// NTP handler will use: ntpConfig := variant.GetNTPConfig()
 	}
 
 	return h.handleUsecase.Execute(sourceIP, sourcePort, destinationIP, payload, config, variantID)
