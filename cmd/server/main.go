@@ -19,6 +19,7 @@ func main() {
 		CoordinatorAddr: getEnv("COORDINATOR_ADDR", "0.0.0.0:8080"),
 		HoneypotIPs:     getEnv("HONEYPOT_IPS", "127.0.0.1"),
 		DNSPort:         getEnv("DNS_PORT", "5354"),
+		NTPPort:         getEnv("NTP_PORT", "123"),
 		EventsFile:      getEnv("EVENTS_FILE", ""),
 	}
 
