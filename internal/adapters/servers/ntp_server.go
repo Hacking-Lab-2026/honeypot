@@ -2,13 +2,14 @@ package servers
 
 import (
 	"context"
+	"fmt"
 	"net"
 
 	"github.com/Hacking-Lab-2026/honeypot/internal/adapters/handlers"
 	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 )
 
-const ntpBufferSize = 512
+const ntpBufferSize = 1500
 
 // NTPServer listens for UDP NTP requests on a single address and dispatches each packet to a goroutine.
 type NTPServer struct {
@@ -62,14 +63,20 @@ func (s *NTPServer) Start(ctx context.Context) error {
 }
 
 func (s *NTPServer) handleRequest(conn *net.UDPConn, remoteAddr *net.UDPAddr, payload []byte) {
-	response, err := s.handler.Handle(remoteAddr.IP.String(), remoteAddr.Port, s.destinationIP, payload)
+	s.logger.Info(fmt.Sprintf("NTP packet received from %s, %d bytes", remoteAddr, len(payload)))
+
+	packets, err := s.handler.Handle(remoteAddr.IP.String(), remoteAddr.Port, s.destinationIP, payload)
 	if err != nil {
 		s.logger.Error("Error processing NTP request from " + remoteAddr.String() + ": " + err.Error())
 		return
 	}
-	if len(response) > 0 {
-		if _, err := conn.WriteToUDP(response, remoteAddr); err != nil {
-			s.logger.Error("Error sending NTP response to " + remoteAddr.String() + ": " + err.Error())
+	for i, pkt := range packets {
+		if _, err := conn.WriteToUDP(pkt, remoteAddr); err != nil {
+			s.logger.Error(fmt.Sprintf(
+				"Error sending NTP response packet %d/%d to %s: %v",
+				i+1, len(packets), remoteAddr, err,
+			))
+			return
 		}
 	}
 }

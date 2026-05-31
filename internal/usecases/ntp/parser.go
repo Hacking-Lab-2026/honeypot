@@ -7,11 +7,15 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 )
 
-// ParseNTPRequest parses the minimal NTP header from a UDP payload.
-// Returns an NTPQuery with selected fields. Expects at least 48 bytes.
+// ParseNTPRequest parses the NTP header from a UDP payload.
+// Different NTP modes have different minimum sizes:
+//   - Modes 1-5 (time sync): 48 bytes (standard NTP packet)
+//   - Mode 6 (control): 12 bytes (control header)
+//   - Mode 7 (private/monlist): 8 bytes (private header)
 func ParseNTPRequest(data []byte) (*models.NTPQuery, error) {
-	if len(data) < 48 {
-		return nil, fmt.Errorf("ntp packet too short: %d bytes", len(data))
+	// All NTP packets share at least the first byte (LI/VN/Mode).
+	if len(data) < 1 {
+		return nil, fmt.Errorf("ntp packet empty")
 	}
 
 	b0 := data[0]
@@ -19,29 +23,41 @@ func ParseNTPRequest(data []byte) (*models.NTPQuery, error) {
 	vn := (b0 >> 3) & 0x7
 	mode := b0 & 0x7
 
-	stratum := data[1]
-	poll := int8(data[2])
-	precision := int8(data[3])
-
-	// For control messages (mode 6), extract request code
-	var reqCode uint8
-	if mode == 6 {
-		reqCode = (data[4] >> 3) & 0x1f // bits 3-7 of byte 4
-	}
-
-	// Transmit Timestamp is at offset 40..47
-	tx := binary.BigEndian.Uint64(data[40:48])
-
 	q := &models.NTPQuery{
-		LI:                li,
-		VN:                vn,
-		Mode:              mode,
-		Stratum:           stratum,
-		Poll:              poll,
-		Precision:         precision,
-		TransmitTimestamp: tx,
-		RawSize:           len(data),
-		ReqCode:           reqCode,
+		LI:      li,
+		VN:      vn,
+		Mode:    mode,
+		RawSize: len(data),
 	}
-	return q, nil
+
+	switch mode {
+	case 7:
+		// Private mode: 8-byte header
+		if len(data) < 8 {
+			return nil, fmt.Errorf("ntp mode 7 packet too short: %d bytes", len(data))
+		}
+		// Byte 2 = implementation, Byte 3 = request code
+		q.ReqCode = data[3]
+		return q, nil
+
+	case 6:
+		// Control mode: 12-byte header
+		if len(data) < 12 {
+			return nil, fmt.Errorf("ntp mode 6 packet too short: %d bytes", len(data))
+		}
+		// Byte 4 holds the opcode in bits 3-7
+		q.ReqCode = (data[3]) & 0x1f
+		return q, nil
+
+	default:
+		// Modes 1-5: standard 48-byte NTP packet
+		if len(data) < 48 {
+			return nil, fmt.Errorf("ntp packet too short: %d bytes", len(data))
+		}
+		q.Stratum = data[1]
+		q.Poll = int8(data[2])
+		q.Precision = int8(data[3])
+		q.TransmitTimestamp = binary.BigEndian.Uint64(data[40:48])
+		return q, nil
+	}
 }
