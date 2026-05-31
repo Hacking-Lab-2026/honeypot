@@ -1,0 +1,26 @@
+services:
+  loadgen:
+    build:
+      context: .
+      dockerfile: Dockerfile.loadgen
+    # Required to send raw/spoofed packets from inside the container
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Args are passed explicitly so the script receives them.
+    # Tweak values here rather than in environment vars.
+    command:
+      - python
+      - spoof_same_ip.py
+      - --spoof
+      - "10.0.0.55"
+      - --dst
+      - "192.168.2.5"
+      - --port
+      - "123"
+      - --count
+      - "30"
+      - --interval
+      - "0.01"

