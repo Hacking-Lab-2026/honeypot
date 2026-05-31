@@ -87,10 +87,11 @@ func TestNTPService_Mode7Monlist(t *testing.T) {
 		totalSize += len(pkt)
 	}
 
-	// 20 peers: (20 + 6 - 1) / 6 = 4 packets
-	// Each packet: 8-byte header + up to 6 items × 72 bytes
-	// Total = 8 header + 20*72 item bytes = 1448 bytes
-	expectedSize := 8 + 20*72
+	// 20 peers: (20 + 5) / 6 = 4 packets
+	// Packets 1-3: 8 header + 6*72 = 440 bytes each
+	// Packet 4: 8 header + 2*72 = 152 bytes
+	// Total = 3*440 + 152 = 1472 bytes
+	expectedSize := 1472
 	if totalSize != expectedSize {
 		t.Errorf("Mode 7 response size mismatch: got %d bytes, want %d", totalSize, expectedSize)
 	}
