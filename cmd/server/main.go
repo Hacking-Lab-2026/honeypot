@@ -18,8 +18,10 @@ func main() {
 		ProbeAddr:       getEnv("PROBE_ADDR", "127.0.0.1:5350"),
 		CoordinatorAddr: getEnv("COORDINATOR_ADDR", "0.0.0.0:8080"),
 		HoneypotIPs:     getEnv("HONEYPOT_IPS", "127.0.0.1"),
-		DNSPort:         getEnv("DNS_PORT", "5354"),
+		DNSPort:         getEnv("DNS_PORT", "53"),
+		NTPPort:         getEnv("NTP_PORT", "123"),
 		EventsFile:      getEnv("EVENTS_FILE", ""),
+		ExperimentsFile: os.Getenv("EXPERIMENTS_FILE"),
 	}
 
 	application, err := app.NewApplication(cfg)

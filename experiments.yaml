@@ -1,0 +1,98 @@
+# Experiments loaded at honeypot startup.
+# Loading is idempotent: experiments with matching names are skipped on re-run.
+#
+# Only one experiment should have auto_start: true at a time.
+# Others can be started manually via:
+#   curl -X POST http://localhost:8080/experiments/<id>/start
+# (find the id with: curl http://localhost:8080/experiments)
+
+experiments:
+
+  # -----------------------------------------------------------------------------
+  # Week 2 baseline: response size comparison.
+  # Control returns a minimal A record (~45 B); treatment returns A + 9 TXT
+  # records (~1962 B) for a ~67x amplification factor.
+  # -----------------------------------------------------------------------------
+  - name: "Response Size Study"
+    description: "Compare minimal vs. amplified DNS response sizes across two honeypot IPs"
+    assignment_mode: "destination"
+    auto_start: true
+    variants:
+      - name: "Control"
+        description: "Minimal DNS response: 1 A record"
+        weight: 0.0
+        assigned_ips:
+          - "127.0.0.1"
+        dns_config:
+          response_mode: "minimal"
+          realistic_ttl: true
+      - name: "Treatment"
+        description: "Amplified DNS response: 1 A + 9 large TXT records"
+        weight: 0.0
+        assigned_ips:
+          - "127.0.0.2"
+        dns_config:
+          response_mode: "amplified"
+          realistic_ttl: false
+
+  # -----------------------------------------------------------------------------
+  # Week 3 Part 1: realistic padding.
+  # Treatment uses realistic_padding so TXT records look like SPF/DKIM strings
+  # instead of obvious AAAA... padding. Same byte count, different plausibility.
+  # -----------------------------------------------------------------------------
+  - name: "Realistic Padding Test"
+    description: "Compare obvious vs. realistic TXT padding at identical response sizes"
+    assignment_mode: "destination"
+    auto_start: false
+    variants:
+      - name: "Control"
+        description: "Minimal response with realistic TTL"
+        weight: 0.0
+        assigned_ips:
+          - "127.0.0.1"
+        dns_config:
+          response_mode: "minimal"
+          realistic_ttl: true
+      - name: "Treatment"
+        description: "Amplified response with SPF/DKIM-style TXT padding"
+        weight: 0.0
+        assigned_ips:
+          - "127.0.0.2"
+        dns_config:
+          response_mode: "amplified"
+          realistic_padding: true
+          response_ttl: 300
+
+  # -----------------------------------------------------------------------------
+  # Week 3 Part 2: multi-protocol (DNS + NTP) per variant.
+  # Each variant defines both dns_config and ntp_config; the honeypot dispatches
+  # per protocol based on which port the request arrived on.
+  # NTP treatment uses num_peers=10 → 2 multi-packet monlist responses.
+  # -----------------------------------------------------------------------------
+  - name: "Multi-Protocol Test"
+    description: "Combined DNS and NTP variants per honeypot IP"
+    assignment_mode: "destination"
+    auto_start: false
+    variants:
+      - name: "Control"
+        description: "Minimal DNS and minimal NTP (non-amplifying)"
+        weight: 0.0
+        assigned_ips:
+          - "127.0.0.1"
+        dns_config:
+          response_mode: "minimal"
+          realistic_ttl: true
+        ntp_config:
+          response_mode: "minimal"
+          num_peers: 0
+      - name: "Treatment"
+        description: "Amplified DNS with realistic padding + amplified NTP monlist (10 peers)"
+        weight: 0.0
+        assigned_ips:
+          - "127.0.0.2"
+        dns_config:
+          response_mode: "amplified"
+          realistic_padding: true
+        ntp_config:
+          response_mode: "amplified"
+          num_peers: 10
