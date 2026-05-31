@@ -10,12 +10,13 @@ type NTPConfig struct {
 type NTPQuery struct {
 	LI                uint8 // leap indicator
 	VN                uint8 // version number
-	Mode              uint8 // mode (1=client,4=server)
+	Mode              uint8 // mode (1=client,4=server,6=control,7=monlist)
 	Stratum           uint8
 	Poll              int8
 	Precision         int8
 	TransmitTimestamp uint64 // client's transmit timestamp (offset 40)
 	RawSize           int
+	ReqCode           uint8 // request code (for mode 6 control messages)
 }
 
 type NTPResponse struct {

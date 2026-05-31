@@ -23,6 +23,12 @@ func ParseNTPRequest(data []byte) (*models.NTPQuery, error) {
 	poll := int8(data[2])
 	precision := int8(data[3])
 
+	// For control messages (mode 6), extract request code
+	var reqCode uint8
+	if mode == 6 {
+		reqCode = (data[4] >> 3) & 0x1f // bits 3-7 of byte 4
+	}
+
 	// Transmit Timestamp is at offset 40..47
 	tx := binary.BigEndian.Uint64(data[40:48])
 
@@ -35,6 +41,7 @@ func ParseNTPRequest(data []byte) (*models.NTPQuery, error) {
 		Precision:         precision,
 		TransmitTimestamp: tx,
 		RawSize:           len(data),
+		ReqCode:           reqCode,
 	}
 	return q, nil
 }
