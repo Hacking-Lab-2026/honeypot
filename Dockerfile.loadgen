@@ -9,5 +9,5 @@ RUN pip install scapy pycryptodome
 
 # Flat copy — compose context is repo root, script lives at repo root too
 COPY scripts/spoof_same_ip.py .
-
-CMD ["python", "spoof_same_ip.py"]
+COPY scripts/spoof_monlist.py .
+CMD ["python", "spoof_same_ip.py", "spoof_monlist.py"]

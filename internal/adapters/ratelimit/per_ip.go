@@ -31,8 +31,8 @@ type IPBucketConfig struct {
 // default config, stolen from Griffioen
 func DefaultIPBucketConfig() IPBucketConfig {
 	return IPBucketConfig{
-		Burst:        25,
-		RefillPerSec: 1.0,
+		Burst:        10000,
+		RefillPerSec: 1000.0,
 		TTL:          10 * time.Minute,
 	}
 }

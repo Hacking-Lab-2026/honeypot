@@ -14,11 +14,11 @@ const (
 
 // DNSConfig holds per-variant configuration for DNS response generation.
 type DNSConfig struct {
-	ResponseMode      ResponseMode `json:"response_mode"`
-	ResponseSizeBytes int          `json:"response_size_bytes"` // 0 = no override
-	RealisticTTL      bool         `json:"realistic_ttl"`
-	RealisticPadding  bool         `json:"realistic_padding"`   // use plausible TXT content instead of repeated "A"
-	ResponseTTL       int          `json:"response_ttl"`        // explicit TTL in seconds; 0 falls back to RealisticTTL
+	ResponseMode      ResponseMode `json:"response_mode" yaml:"response_mode"`
+	ResponseSizeBytes int          `json:"response_size_bytes" yaml:"response_size_bytes"`
+	RealisticTTL      bool         `json:"realistic_ttl" yaml:"realistic_ttl"`
+	RealisticPadding  bool         `json:"realistic_padding" yaml:"realistic_padding"`
+	ResponseTTL       int          `json:"response_ttl" yaml:"response_ttl"`
 }
 
 // DNSQuery holds fields parsed from an incoming DNS query packet.
@@ -39,7 +39,7 @@ type DNSEvent struct {
 	ID                  string
 	SourceIP            string
 	SourcePort          int
-	DestinationIP       string  // which of the honeypot's IPs the probe was sent to
+	DestinationIP       string // which of the honeypot's IPs the probe was sent to
 	QueriedName         string
 	QueryType           string // human-readable: "A", "ANY", "MX", …
 	ResponsePayload     []byte

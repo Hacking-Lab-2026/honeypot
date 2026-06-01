@@ -10,34 +10,40 @@ experiments:
 
   # -----------------------------------------------------------------------------
   # Week 2 baseline: response size comparison.
-  # Control returns a minimal A record (~45 B); treatment returns A + 9 TXT
-  # records (~1962 B) for a ~67x amplification factor.
+  # Control returns a minimal response; Proper returns amplified responses for
+  # both DNS (~67x) and NTP (~330x via mode 7 monlist with 36 fake peers).
   # -----------------------------------------------------------------------------
   - name: "Response Size Study"
-    description: "Compare minimal vs. amplified DNS response sizes across two honeypot IPs"
+    description: "Compare minimal vs. amplified DNS/NTP response sizes across two honeypot IPs"
     assignment_mode: "destination"
     auto_start: true
     variants:
       - name: "Control"
-        description: "Minimal DNS response: 1 A record"
+        description: "Minimal DNS and minimal NTP"
         weight: 0.0
         assigned_ips:
           - "127.0.0.1"
         dns_config:
           response_mode: "minimal"
           realistic_ttl: true
-      - name: "Treatment"
-        description: "Amplified DNS response: 1 A + 9 large TXT records"
+        ntp_config:
+          response_mode: "minimal"
+          num_peers: 0
+      - name: "Proper"
+        description: "Amplified DNS (TXT records) and amplified NTP (36-peer monlist)"
         weight: 0.0
         assigned_ips:
-          - "127.0.0.2"
+          - "192.168.2.5"
         dns_config:
           response_mode: "amplified"
           realistic_ttl: false
+        ntp_config:
+          response_mode: "amplified"
+          num_peers: 36
 
   # -----------------------------------------------------------------------------
   # Week 3 Part 1: realistic padding.
-  # Treatment uses realistic_padding so TXT records look like SPF/DKIM strings
+  # Proper uses realistic_padding so TXT records look like SPF/DKIM strings
   # instead of obvious AAAA... padding. Same byte count, different plausibility.
   # -----------------------------------------------------------------------------
   - name: "Realistic Padding Test"
@@ -53,11 +59,11 @@ experiments:
         dns_config:
           response_mode: "minimal"
           realistic_ttl: true
-      - name: "Treatment"
+      - name: "Proper"
         description: "Amplified response with SPF/DKIM-style TXT padding"
         weight: 0.0
         assigned_ips:
-          - "127.0.0.2"
+          - "192.168.2.5"
         dns_config:
           response_mode: "amplified"
           realistic_padding: true
@@ -67,7 +73,7 @@ experiments:
   # Week 3 Part 2: multi-protocol (DNS + NTP) per variant.
   # Each variant defines both dns_config and ntp_config; the honeypot dispatches
   # per protocol based on which port the request arrived on.
-  # NTP treatment uses num_peers=10 → 2 multi-packet monlist responses.
+  # NTP Proper uses num_peers=10 → 2 multi-packet monlist responses.
   # -----------------------------------------------------------------------------
   - name: "Multi-Protocol Test"
     description: "Combined DNS and NTP variants per honeypot IP"
@@ -85,11 +91,11 @@ experiments:
         ntp_config:
           response_mode: "minimal"
           num_peers: 0
-      - name: "Treatment"
+      - name: "Proper"
         description: "Amplified DNS with realistic padding + amplified NTP monlist (10 peers)"
         weight: 0.0
         assigned_ips:
-          - "127.0.0.2"
+          - "192.168.2.5"
         dns_config:
           response_mode: "amplified"
           realistic_padding: true

@@ -13,7 +13,7 @@ services:
     # Tweak values here rather than in environment vars.
     command:
       - python
-      - spoof_same_ip.py
+      - spoof_monlist.py
       - --spoof
       - "10.0.0.55"
       - --dst

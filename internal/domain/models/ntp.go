@@ -3,8 +3,8 @@ package models
 import "time"
 
 type NTPConfig struct {
-	ResponseMode string `json:"response_mode"` // "minimal" or "amplified"
-	NumPeers     int    `json:"num_peers"`     // total fake peers across all monlist packets (amplified mode)
+	ResponseMode string `json:"response_mode" yaml:"response_mode"`
+	NumPeers     int    `json:"num_peers" yaml:"num_peers"`
 }
 
 // NTPQuery is the parsed incoming NTP request.
