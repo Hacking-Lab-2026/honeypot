@@ -30,8 +30,9 @@ COPY --from=builder /build/honeypot .
 RUN addgroup -g 1000 honeypot && adduser -D -u 1000 -G honeypot honeypot
 USER honeypot
 
-# Expose UDP port
+# Expose UDP ports
 EXPOSE 53/udp
+EXPOSE 123/udp
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
