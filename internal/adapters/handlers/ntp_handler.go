@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"fmt"
+
 	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 	expusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/experiment"
@@ -25,14 +27,17 @@ func NewNTPHandler(
 	}
 }
 
-// handle A/B setup
-func (h *NTPHandler) Handle(sourceIP string, sourcePort int, destinationIP string, payload []byte) ([]byte, error) {
-	// default: minimal timestamp-only responses
+func (h *NTPHandler) Handle(sourceIP string, sourcePort int, destinationIP string, payload []byte) ([][]byte, error) {
+	// default: minimal monlist (non-amplifying)
 	config := models.NTPConfig{ResponseMode: "minimal"}
 	variantID := ""
 
 	variant, err := h.assignUsecase.Execute(sourceIP, destinationIP)
-	if err == nil && variant != nil {
+	if err != nil {
+		h.logger.Info(fmt.Sprintf("variant assignment failed for %s: %v", sourceIP, err))
+	} else if variant == nil {
+		h.logger.Info(fmt.Sprintf("no variant assigned for %s, using default", sourceIP))
+	} else {
 		config = variant.GetNTPConfig()
 		variantID = variant.ID
 	}

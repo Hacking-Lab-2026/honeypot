@@ -35,6 +35,8 @@ type Config struct {
 	EventsFile string
 	// NTPPort is the port NTP servers listen on default 123
 	NTPPort string
+	//
+	ExperimentsFile string
 }
 
 // Application sets up and wires all dependencies.
@@ -100,6 +102,21 @@ func NewApplication(cfg Config) (*Application, error) {
 	getExperimentUsecase := expusecase.NewGetExperimentUsecase(experimentRepo, assignmentRepo)
 	updateStatusUsecase := expusecase.NewUpdateStatusUsecase(experimentRepo, logger)
 	assignVariantUsecase := expusecase.NewAssignVariantUsecase(experimentService, experimentRepo, assignmentRepo, logger)
+
+	// ── Load experiments from config file (idempotent) ───────────────────────────
+	if cfg.ExperimentsFile != "" {
+		n, err := loadExperimentsFromFile(
+			cfg.ExperimentsFile,
+			createExperimentUsecase,
+			listExperimentsUsecase,
+			updateStatusUsecase,
+			logger,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("load experiments: %w", err)
+		}
+		logger.Info(fmt.Sprintf("loaded experiments from %s: %d new", cfg.ExperimentsFile, n))
+	}
 
 	coordinatorServer := api.NewCoordinatorServer(
 		cfg.CoordinatorAddr,

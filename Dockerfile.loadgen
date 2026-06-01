@@ -1,0 +1,13 @@
+FROM python:3.13-bookworm
+
+WORKDIR /app
+
+RUN apt update && apt install -y iproute2 iputils-ping net-tools netcat-traditional libpcap-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install scapy pycryptodome
+
+# Flat copy — compose context is repo root, script lives at repo root too
+COPY scripts/spoof_same_ip.py .
+COPY scripts/spoof_monlist.py .
+CMD ["python", "spoof_same_ip.py", "spoof_monlist.py"]

