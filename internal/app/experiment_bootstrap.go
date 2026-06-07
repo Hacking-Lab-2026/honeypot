@@ -20,12 +20,13 @@ type experimentSpec struct {
 }
 
 type variantSpec struct {
-	Name        string           `yaml:"name"`
-	Description string           `yaml:"description"`
-	Weight      float64          `yaml:"weight"`
-	AssignedIPs []string         `yaml:"assigned_ips"`
-	DNSConfig   models.DNSConfig `yaml:"dns_config"`
-	NTPConfig   models.NTPConfig `yaml:"ntp_config"`
+	Name        string            `yaml:"name"`
+	Description string            `yaml:"description"`
+	Weight      float64           `yaml:"weight"`
+	AssignedIPs []string          `yaml:"assigned_ips"`
+	DNSConfig   models.DNSConfig  `yaml:"dns_config"`
+	NTPConfig   models.NTPConfig  `yaml:"ntp_config"`
+	SSDPConfig  models.SSDPConfig `yaml:"ssdp_config"`
 }
 
 type experimentsFile struct {
@@ -82,6 +83,7 @@ func loadExperimentsFromFile(
 				AssignedIPs: v.AssignedIPs,
 				DNSConfig:   v.DNSConfig,
 				NTPConfig:   v.NTPConfig,
+				SSDPConfig:  v.SSDPConfig,
 			}
 		}
 

@@ -23,7 +23,6 @@ type NTPResponse struct {
 	Packets [][]byte
 }
 
-// SinglePacketResponse is a convenience for the common single-packet case.
 func SinglePacketResponse(p []byte) NTPResponse {
 	return NTPResponse{Packets: [][]byte{p}}
 }

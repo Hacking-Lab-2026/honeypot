@@ -19,6 +19,7 @@ type CreateVariantInput struct {
 	AssignedIPs []string // destination-mode only
 	DNSConfig   models.DNSConfig
 	NTPConfig   models.NTPConfig
+	SSDPConfig  models.SSDPConfig
 }
 
 // CreateExperimentInput holds the caller-supplied fields for a new experiment.
@@ -77,6 +78,7 @@ func (u *CreateExperimentUsecase) Execute(input CreateExperimentInput) (*models.
 			AssignedIPs:  vi.AssignedIPs,
 			DNSConfig:    vi.DNSConfig,
 			NTPConfig:    vi.NTPConfig,
+			SSDPConfig:   vi.SSDPConfig,
 		}
 	}
 
@@ -102,7 +104,7 @@ func (u *CreateExperimentUsecase) Execute(input CreateExperimentInput) (*models.
 // newUUID generates a random UUID v4 string using crypto/rand.
 func newUUID() string {
 	b := make([]byte, 16)
-	rand.Read(b) //nolint:errcheck
+	rand.Read(b)                //nolint:errcheck
 	b[6] = (b[6] & 0x0f) | 0x40 // version 4
 	b[8] = (b[8] & 0x3f) | 0x80 // variant RFC 4122
 	return fmt.Sprintf("%s-%s-%s-%s-%s",

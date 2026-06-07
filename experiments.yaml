@@ -16,7 +16,7 @@ experiments:
   - name: "Response Size Study"
     description: "Compare minimal vs. amplified DNS/NTP response sizes across two honeypot IPs"
     assignment_mode: "destination"
-    auto_start: true
+    auto_start: false
     variants:
       - name: "Control"
         description: "Minimal DNS and minimal NTP"
@@ -102,3 +102,40 @@ experiments:
         ntp_config:
           response_mode: "amplified"
           num_peers: 10
+  
+  # -----------------------------------------------------------------------------
+  # Full SSDP test: DNS + NTP + SSDP per variant.
+  # -----------------------------------------------------------------------------
+  - name: "Full Option"
+    description: "Test SSDP together with DNS and NTP"
+    assignment_mode: "destination"
+    auto_start: true
+    variants:
+      - name: "Control"
+        description: "Minimal across all protocols"
+        weight: 0.0
+        assigned_ips:
+          - "127.0.0.1"
+        dns_config:
+          response_mode: "minimal"
+          realistic_ttl: true
+        ntp_config:
+          response_mode: "minimal"
+          num_peers: 0
+        ssdp_config:
+          response_mode: "minimal"
+          num_services: 0
+      - name: "Proper"
+        description: "Amplified across all protocols"
+        weight: 0.0
+        assigned_ips:
+          - "192.168.2.5"
+        dns_config:
+          response_mode: "amplified"
+          realistic_padding: true
+        ntp_config:
+          response_mode: "amplified"
+          num_peers: 36
+        ssdp_config:
+          response_mode: "amplified"
+          num_services: 10

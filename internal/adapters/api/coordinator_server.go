@@ -127,12 +127,13 @@ func (s *CoordinatorServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // ---- request/response types ----
 
 type createVariantRequest struct {
-	Name        string           `json:"name"`
-	Description string           `json:"description"`
-	Weight      float64          `json:"weight"`
-	AssignedIPs []string         `json:"assigned_ips"`
-	DNSConfig   models.DNSConfig `json:"dns_config"`
-	NTPConfig   models.NTPConfig `json:"ntp_config"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Weight      float64           `json:"weight"`
+	AssignedIPs []string          `json:"assigned_ips"`
+	DNSConfig   models.DNSConfig  `json:"dns_config"`
+	NTPConfig   models.NTPConfig  `json:"ntp_config"`
+	SSDPConfig  models.SSDPConfig `json:"ssdp_config"`
 }
 
 type createExperimentRequest struct {
@@ -160,6 +161,7 @@ func (s *CoordinatorServer) handleCreateExperiment(w http.ResponseWriter, r *htt
 			AssignedIPs: v.AssignedIPs,
 			DNSConfig:   v.DNSConfig,
 			NTPConfig:   v.NTPConfig,
+			SSDPConfig:  v.SSDPConfig,
 		}
 	}
 

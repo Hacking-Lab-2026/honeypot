@@ -36,6 +36,11 @@ type NTPEventRepository interface {
 	List() ([]*models.NTPEvent, error)
 }
 
+type SSDPEventRepository interface {
+	Save(event *models.SSDPEvent) error
+	List() ([]*models.SSDPEvent, error)
+}
+
 // ExperimentRepository defines CRUD operations for experiments and their variants.
 type ExperimentRepository interface {
 	SaveExperiment(exp *models.Experiment) error
