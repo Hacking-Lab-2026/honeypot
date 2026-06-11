@@ -37,6 +37,8 @@ EXPOSE 19/udp
 EXPOSE 53/udp
 # NTP (UDP)
 EXPOSE 123/udp
+# SSDP (UDP)
+EXPOSE 1900/udp
 # Coordinator API (TCP)
 EXPOSE 8080/tcp
 
