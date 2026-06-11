@@ -34,14 +34,15 @@ type Experiment struct {
 
 // Variant represents one arm of an experiment with its own per-protocol response config.
 type Variant struct {
-	ID           string    `json:"id"`
-	ExperimentID string    `json:"experiment_id"`
-	Name         string    `json:"name"`
-	Description  string    `json:"description"`
-	Weight       float64   `json:"weight"`                 // 0–1; source-mode variants must sum to 1.0
-	AssignedIPs  []string  `json:"assigned_ips,omitempty"` // destination-mode: IPs that map to this variant
-	DNSConfig    DNSConfig `json:"dns_config"`
-	NTPConfig    NTPConfig `json:"ntp_config"`
+	ID           string     `json:"id"`
+	ExperimentID string     `json:"experiment_id"`
+	Name         string     `json:"name"`
+	Description  string     `json:"description"`
+	Weight       float64    `json:"weight"`                 // 0–1; source-mode variants must sum to 1.0
+	AssignedIPs  []string   `json:"assigned_ips,omitempty"` // destination-mode: IPs that map to this variant
+	DNSConfig    DNSConfig  `json:"dns_config"`
+	NTPConfig    NTPConfig  `json:"ntp_config"`
+	SSDPConfig   SSDPConfig `json:"ssdp_config"`
 }
 
 // GetDNSConfig returns the DNS-specific configuration for this variant.
@@ -49,6 +50,9 @@ func (v *Variant) GetDNSConfig() DNSConfig { return v.DNSConfig }
 
 // GetNTPConfig returns the NTP-specific configuration for this variant.
 func (v *Variant) GetNTPConfig() NTPConfig { return v.NTPConfig }
+
+// SSDP
+func (v *Variant) GetSSDPConfig() SSDPConfig { return v.SSDPConfig }
 
 // Assignment records which variant a source IP was assigned to (sticky per experiment).
 type Assignment struct {

@@ -20,6 +20,7 @@ func main() {
 		HoneypotIPs:     getEnv("HONEYPOT_IPS", "127.0.0.1"),
 		DNSPort:         getEnv("DNS_PORT", "53"),
 		NTPPort:         getEnv("NTP_PORT", "123"),
+		SSDPPort:        getEnv("SSDP_PORT", "1900"),
 		EventsFile:      getEnv("EVENTS_FILE", ""),
 		ExperimentsFile: os.Getenv("EXPERIMENTS_FILE"),
 	}

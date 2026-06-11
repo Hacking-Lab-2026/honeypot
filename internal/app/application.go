@@ -18,6 +18,7 @@ import (
 	expusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/experiment"
 	ntpusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/ntp"
 	"github.com/Hacking-Lab-2026/honeypot/internal/usecases/probe"
+	ssdpusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/ssdp"
 )
 
 // Config holds all runtime configuration for the application.
@@ -35,6 +36,8 @@ type Config struct {
 	EventsFile string
 	// NTPPort is the port NTP servers listen on default 123
 	NTPPort string
+	// SSDP, def 1900
+	SSDPPort string
 	//
 	ExperimentsFile string
 }
@@ -44,6 +47,7 @@ type Application struct {
 	probeServer       *servers.Server
 	dnsServers        []*servers.DNSServer
 	ntpServers        []*servers.NTPServer
+	ssdpServers       []*servers.SSDPServer
 	coordinatorServer *api.CoordinatorServer
 	logger            *logging.ConsoleLogger
 	classifier        ports.Classifier
@@ -57,6 +61,7 @@ func NewApplication(cfg Config) (*Application, error) {
 	probeRateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
 	dnsRateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
 	ntpRateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
+	ssdpRateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
 	classifier := services.NewClassifierService()
 
 	// ── Probe (generic UDP) server ────────────────────────────────────────────────
@@ -90,6 +95,18 @@ func NewApplication(cfg Config) (*Application, error) {
 		logger.Info("NTP events will be persisted to " + cfg.EventsFile)
 	} else {
 		ntpEventRepo = persistence.NewNTPInMemoryRepository()
+	}
+
+	var ssdpEventRepo ports.SSDPEventRepository
+	if cfg.EventsFile != "" {
+		repo, err := persistence.NewJSONLinesSSDPRepository(cfg.EventsFile)
+		if err != nil {
+			return nil, fmt.Errorf("open ssdp events file: %w", err)
+		}
+		ssdpEventRepo = repo
+		logger.Info("SSDP events will be persisted to " + cfg.EventsFile)
+	} else {
+		ssdpEventRepo = persistence.NewSSDPInMemoryRepository()
 	}
 
 	// ── Experiment / coordinator ──────────────────────────────────────────────────
@@ -164,11 +181,27 @@ func NewApplication(cfg Config) (*Application, error) {
 		addr := ip + ":" + ntpPort
 		ntpServers[i] = servers.NewNTPServer(addr, ip, ntpHandler, logger)
 	}
+	// ── SSDP honeypot servers ─────────────────────────────────────────────────────
+	ssdpService := &services.SSDPService{}
+	handleSSDPUsecase := ssdpusecase.NewHandleSSDPRequestUsecase(ssdpService, ssdpEventRepo, logger, ssdpRateLimiter, classifier)
+	ssdpHandler := handlers.NewSSDPHandler(handleSSDPUsecase, assignVariantUsecase, logger)
+
+	ssdpPort := cfg.SSDPPort
+	if ssdpPort == "" {
+		ssdpPort = "1900"
+	}
+
+	ssdpServers := make([]*servers.SSDPServer, len(ips))
+	for i, ip := range ips {
+		addr := ip + ":" + ssdpPort
+		ssdpServers[i] = servers.NewSSDPServer(addr, ip, ssdpHandler, logger)
+	}
 
 	return &Application{
 		probeServer:       probeServer,
 		dnsServers:        dnsServers,
 		ntpServers:        ntpServers,
+		ssdpServers:       ssdpServers,
 		coordinatorServer: coordinatorServer,
 		logger:            logger,
 		classifier:        classifier,
@@ -186,7 +219,7 @@ func (a *Application) NTPEventRepository() ports.NTPEventRepository {
 func (app *Application) Start(ctx context.Context) error {
 	app.logger.Info("Honeypot application starting")
 
-	serverCount := 2 + len(app.dnsServers) + len(app.ntpServers) // probe + coordinator + dns + ntp servers
+	serverCount := 2 + len(app.dnsServers) + len(app.ntpServers) + len(app.ssdpServers) // probe + coordinator + dns + ntp + ssdp servers
 	errCh := make(chan error, serverCount)
 
 	go func() {
@@ -219,6 +252,14 @@ func (app *Application) Start(ctx context.Context) error {
 		}()
 	}
 
+	for _, ss := range app.ssdpServers {
+		ss := ss
+		go func() {
+			if err := ss.Start(ctx); err != nil {
+				errCh <- fmt.Errorf("ssdp server %s: %w", ss.Addr(), err)
+			}
+		}()
+	}
 	go func() {
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
