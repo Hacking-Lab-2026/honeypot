@@ -16,16 +16,16 @@ func TestPersistence(t *testing.T) {
 	RunSpecs(t, "Persistence Adapters Suite")
 }
 
-var _ = Describe("InMemoryEventRepository", func() {
-	var repo *persistence.InMemoryEventRepository
-	var testEvent *models.ProbeEvent
+var _ = Describe("InMemoryChargenEventRepository", func() {
+	var repo *persistence.InMemoryChargenEventRepository
+	var testEvent *models.ChargenEvent
 
 	BeforeEach(func() {
-		repo = persistence.NewInMemoryEventRepository()
-		testEvent = &models.ProbeEvent{
+		repo = persistence.NewInMemoryChargenEventRepository()
+		testEvent = &models.ChargenEvent{
 			ID:        "test-1",
 			SourceIP:  "192.168.1.1",
-			Port:      53,
+			Port:      19,
 			Protocol:  "UDP",
 			Payload:   "test",
 			Timestamp: time.Now(),
@@ -48,19 +48,19 @@ var _ = Describe("InMemoryEventRepository", func() {
 		})
 
 		It("should allow saving multiple events", func() {
-			event1 := &models.ProbeEvent{ID: "event-1"}
-			event2 := &models.ProbeEvent{ID: "event-2"}
+			event1 := &models.ChargenEvent{ID: "event-1"}
+			event2 := &models.ChargenEvent{ID: "event-2"}
 
 			Expect(repo.Save(event1)).NotTo(HaveOccurred())
 			Expect(repo.Save(event2)).NotTo(HaveOccurred())
 		})
 
 		It("should overwrite event with same ID", func() {
-			event := &models.ProbeEvent{
+			event := &models.ChargenEvent{
 				ID:       "test-id",
 				SourceIP: "192.168.1.1",
 			}
-			updatedEvent := &models.ProbeEvent{
+			updatedEvent := &models.ChargenEvent{
 				ID:       "test-id",
 				SourceIP: "192.168.1.2",
 			}
@@ -93,9 +93,9 @@ var _ = Describe("InMemoryEventRepository", func() {
 		})
 
 		It("should retrieve correct event among multiple", func() {
-			event1 := &models.ProbeEvent{ID: "event-1", SourceIP: "10.0.0.1"}
-			event2 := &models.ProbeEvent{ID: "event-2", SourceIP: "10.0.0.2"}
-			event3 := &models.ProbeEvent{ID: "event-3", SourceIP: "10.0.0.3"}
+			event1 := &models.ChargenEvent{ID: "event-1", SourceIP: "10.0.0.1"}
+			event2 := &models.ChargenEvent{ID: "event-2", SourceIP: "10.0.0.2"}
+			event3 := &models.ChargenEvent{ID: "event-3", SourceIP: "10.0.0.3"}
 
 			repo.Save(event1)
 			repo.Save(event2)

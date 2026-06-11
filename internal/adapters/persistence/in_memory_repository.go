@@ -6,20 +6,20 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 )
 
-// InMemoryEventRepository implements the EventRepository port
-type InMemoryEventRepository struct {
-	store map[string]*models.ProbeEvent
+// InMemoryChargenEventRepository implements the ChargenEventRepository port
+type InMemoryChargenEventRepository struct {
+	store map[string]*models.ChargenEvent
 }
 
-// NewInMemoryEventRepository creates a new repository
-func NewInMemoryEventRepository() *InMemoryEventRepository {
-	return &InMemoryEventRepository{
-		store: make(map[string]*models.ProbeEvent),
+// NewInMemoryChargenEventRepository creates a new repository
+func NewInMemoryChargenEventRepository() *InMemoryChargenEventRepository {
+	return &InMemoryChargenEventRepository{
+		store: make(map[string]*models.ChargenEvent),
 	}
 }
 
-// Save stores a probe event in memory
-func (r *InMemoryEventRepository) Save(event *models.ProbeEvent) error {
+// Save stores a CHARGEN event in memory
+func (r *InMemoryChargenEventRepository) Save(event *models.ChargenEvent) error {
 	if event == nil {
 		return fmt.Errorf("event cannot be nil")
 	}
@@ -27,8 +27,8 @@ func (r *InMemoryEventRepository) Save(event *models.ProbeEvent) error {
 	return nil
 }
 
-// Get retrieves a probe event by ID
-func (r *InMemoryEventRepository) Get(id string) (*models.ProbeEvent, error) {
+// Get retrieves a CHARGEN event by ID
+func (r *InMemoryChargenEventRepository) Get(id string) (*models.ChargenEvent, error) {
 	event, ok := r.store[id]
 	if !ok {
 		return nil, fmt.Errorf("event not found")

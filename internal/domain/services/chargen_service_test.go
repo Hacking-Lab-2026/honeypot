@@ -14,21 +14,21 @@ func TestServices(t *testing.T) {
 	RunSpecs(t, "Domain Services Suite")
 }
 
-var _ = Describe("ProbeService", func() {
-	var service *services.ProbeService
+var _ = Describe("ChargenService", func() {
+	var service *services.ChargenService
 
 	BeforeEach(func() {
-		service = &services.ProbeService{}
+		service = &services.ChargenService{}
 	})
 
-	Describe("ProcessProbe", func() {
-		It("should create a probe event with correct values", func() {
+	Describe("ProcessChargen", func() {
+		It("should create a chargen event with correct values", func() {
 			sourceIP := "192.168.1.100"
-			port := 53
+			port := 19
 			protocol := "UDP"
 			payload := "test-probe"
 
-			event := service.ProcessProbe(sourceIP, port, protocol, payload)
+			event := service.ProcessChargen(sourceIP, port, protocol, payload)
 
 			Expect(event).NotTo(BeNil())
 			Expect(event.SourceIP).To(Equal(sourceIP))
@@ -38,27 +38,27 @@ var _ = Describe("ProbeService", func() {
 		})
 
 		It("should generate a non-empty response", func() {
-			event := service.ProcessProbe("10.0.0.1", 5353, "UDP", "payload")
+			event := service.ProcessChargen("10.0.0.1", 19, "UDP", "payload")
 
 			Expect(event.Response).NotTo(BeEmpty())
 		})
 
 		It("should set a non-zero timestamp", func() {
-			event := service.ProcessProbe("10.0.0.1", 5353, "UDP", "payload")
+			event := service.ProcessChargen("10.0.0.1", 19, "UDP", "payload")
 
 			Expect(event.Timestamp.IsZero()).To(BeFalse())
 		})
 
 		It("should generate unique IDs for different sources", func() {
-			event1 := service.ProcessProbe("192.168.1.1", 53, "UDP", "payload")
-			event2 := service.ProcessProbe("192.168.1.2", 53, "UDP", "payload")
+			event1 := service.ProcessChargen("192.168.1.1", 19, "UDP", "payload")
+			event2 := service.ProcessChargen("192.168.1.2", 19, "UDP", "payload")
 
 			Expect(event1.ID).NotTo(Equal(event2.ID))
 		})
 
 		It("should include port in the ID", func() {
-			event1 := service.ProcessProbe("192.168.1.1", 53, "UDP", "payload")
-			event2 := service.ProcessProbe("192.168.1.1", 5353, "UDP", "payload")
+			event1 := service.ProcessChargen("192.168.1.1", 19, "UDP", "payload")
+			event2 := service.ProcessChargen("192.168.1.1", 20, "UDP", "payload")
 
 			Expect(event1.ID).NotTo(Equal(event2.ID))
 		})

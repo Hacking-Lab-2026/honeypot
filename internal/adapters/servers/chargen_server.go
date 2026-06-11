@@ -1,4 +1,4 @@
-﻿package servers
+package servers
 
 import (
 	"context"
@@ -8,26 +8,26 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 )
 
-// Server represents a UDP honeypot server endpoint
-type Server struct {
+// ChargenServer represents a UDP CHARGEN (RFC 864) honeypot server endpoint
+type ChargenServer struct {
 	addr    string
-	handler *handlers.ProbeHandler
+	handler *handlers.ChargenHandler
 	logger  ports.Logger
 }
 
-// NewServer creates a new UDP server
-func NewServer(addr string, handler *handlers.ProbeHandler, logger ports.Logger) *Server {
-	return &Server{
+// NewChargenServer creates a new CHARGEN UDP server
+func NewChargenServer(addr string, handler *handlers.ChargenHandler, logger ports.Logger) *ChargenServer {
+	return &ChargenServer{
 		addr:    addr,
 		handler: handler,
 		logger:  logger,
 	}
 }
 
-// Start begins listening for incoming UDP probes.
+// Start begins listening for incoming UDP CHARGEN probes.
 // It returns when ctx is cancelled or a fatal socket error occurs.
-func (s *Server) Start(ctx context.Context) error {
-	s.logger.Info("Starting UDP honeypot server on " + s.addr)
+func (s *ChargenServer) Start(ctx context.Context) error {
+	s.logger.Info("Starting CHARGEN honeypot server on " + s.addr)
 
 	addr, err := net.ResolveUDPAddr("udp", s.addr)
 	if err != nil {
@@ -66,8 +66,8 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 }
 
-// handleProbe processes an incoming probe
-func (s *Server) handleProbe(conn *net.UDPConn, remoteAddr *net.UDPAddr, payload []byte) {
+// handleProbe processes an incoming CHARGEN probe
+func (s *ChargenServer) handleProbe(conn *net.UDPConn, remoteAddr *net.UDPAddr, payload []byte) {
 	response, err := s.handler.Handle(
 		remoteAddr.IP.String(),
 		remoteAddr.Port,
@@ -76,15 +76,14 @@ func (s *Server) handleProbe(conn *net.UDPConn, remoteAddr *net.UDPAddr, payload
 	)
 
 	if err != nil {
-		s.logger.Error("Error processing probe: " + err.Error())
+		s.logger.Error("Error processing CHARGEN probe: " + err.Error())
 		return
 	}
 
-	// Send response if one was generated
 	if response != "" {
 		_, err := conn.WriteToUDP([]byte(response), remoteAddr)
 		if err != nil {
-			s.logger.Error("Error sending response: " + err.Error())
+			s.logger.Error("Error sending CHARGEN response: " + err.Error())
 		}
 	}
 }
