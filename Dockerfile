@@ -31,6 +31,8 @@ RUN addgroup -g 1000 honeypot && adduser -D -u 1000 -G honeypot honeypot
 USER honeypot
 
 # Expose ports
+# CHARGEN (UDP)
+EXPOSE 19/udp
 # DNS (UDP)
 EXPOSE 53/udp
 # NTP (UDP)

@@ -6,12 +6,12 @@ import (
 	"time"
 )
 
-// ProbeService handles business logic for processing probes
-type ProbeService struct{}
+// ChargenService handles business logic for processing CHARGEN (RFC 864) probes
+type ChargenService struct{}
 
-// ProcessProbe processes an incoming probe and generates a response
-func (ps *ProbeService) ProcessProbe(sourceIP string, port int, protocol string, payload string) *models.ProbeEvent {
-	return &models.ProbeEvent{
+// ProcessChargen processes an incoming CHARGEN probe and generates a response
+func (cs *ChargenService) ProcessChargen(sourceIP string, port int, protocol string, payload string) *models.ChargenEvent {
+	return &models.ChargenEvent{
 		ID:        fmt.Sprintf("%s-%d", sourceIP, port),
 		SourceIP:  sourceIP,
 		Port:      port,

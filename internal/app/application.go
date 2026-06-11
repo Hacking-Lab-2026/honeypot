@@ -17,13 +17,13 @@ import (
 	dnsusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/dns"
 	expusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/experiment"
 	ntpusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/ntp"
-	"github.com/Hacking-Lab-2026/honeypot/internal/usecases/probe"
+	chargenUsecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/chargen"
 	ssdpusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/ssdp"
 )
 
 // Config holds all runtime configuration for the application.
 type Config struct {
-	ProbeAddr       string // UDP probe server address (e.g. "127.0.0.1:53")
+	ChargenAddr     string // UDP CHARGEN server address (e.g. "0.0.0.0:19")
 	CoordinatorAddr string // HTTP coordinator address (e.g. "0.0.0.0:8080")
 
 	// HoneypotIPs is a comma-separated list of IP addresses to bind DNS servers to.
@@ -44,7 +44,7 @@ type Config struct {
 
 // Application sets up and wires all dependencies.
 type Application struct {
-	probeServer       *servers.Server
+	chargenServer     *servers.ChargenServer
 	dnsServers        []*servers.DNSServer
 	ntpServers        []*servers.NTPServer
 	ssdpServers       []*servers.SSDPServer
@@ -58,18 +58,18 @@ type Application struct {
 // This is the single wiring point â€" no other file may perform dependency injection.
 func NewApplication(cfg Config) (*Application, error) {
 	logger := &logging.ConsoleLogger{}
-	probeRateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
+	chargenRateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
 	dnsRateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
 	ntpRateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
 	ssdpRateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
 	classifier := services.NewClassifierService()
 
-	// ── Probe (generic UDP) server ────────────────────────────────────────────────
-	probeRepo := persistence.NewInMemoryEventRepository()
-	probeService := &services.ProbeService{}
-	processProbeUsecase := probe.NewProcessProbeUsecase(probeService, probeRepo, logger, probeRateLimiter)
-	probeHandler := handlers.NewProbeHandler(processProbeUsecase)
-	probeServer := servers.NewServer(cfg.ProbeAddr, probeHandler, logger)
+	// ── CHARGEN (RFC 864) server ──────────────────────────────────────────────────
+	chargenRepo := persistence.NewInMemoryChargenEventRepository()
+	chargenService := &services.ChargenService{}
+	handleChargenUsecase := chargenUsecase.NewHandleChargenRequestUsecase(chargenService, chargenRepo, logger, chargenRateLimiter)
+	chargenHandler := handlers.NewChargenHandler(handleChargenUsecase)
+	chargenServer := servers.NewChargenServer(cfg.ChargenAddr, chargenHandler, logger)
 
 	// ── DNS event repository (in-memory or file-backed) ───────────────────────────
 	var dnsEventRepo ports.DNSEventRepository
@@ -198,7 +198,7 @@ func NewApplication(cfg Config) (*Application, error) {
 	}
 
 	return &Application{
-		probeServer:       probeServer,
+		chargenServer:     chargenServer,
 		dnsServers:        dnsServers,
 		ntpServers:        ntpServers,
 		ssdpServers:       ssdpServers,
@@ -219,12 +219,12 @@ func (a *Application) NTPEventRepository() ports.NTPEventRepository {
 func (app *Application) Start(ctx context.Context) error {
 	app.logger.Info("Honeypot application starting")
 
-	serverCount := 2 + len(app.dnsServers) + len(app.ntpServers) + len(app.ssdpServers) // probe + coordinator + dns + ntp + ssdp servers
+	serverCount := 2 + len(app.dnsServers) + len(app.ntpServers) + len(app.ssdpServers) // chargen + coordinator + dns + ntp + ssdp servers
 	errCh := make(chan error, serverCount)
 
 	go func() {
-		if err := app.probeServer.Start(ctx); err != nil {
-			errCh <- fmt.Errorf("probe server: %w", err)
+		if err := app.chargenServer.Start(ctx); err != nil {
+			errCh <- fmt.Errorf("chargen server: %w", err)
 		}
 	}()
 

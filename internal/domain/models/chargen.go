@@ -2,8 +2,8 @@ package models
 
 import "time"
 
-// ProbeEvent represents a DDoS probe/attack attempt in the honeypot
-type ProbeEvent struct {
+// ChargenEvent represents a CHARGEN (RFC 864) probe/attack attempt in the honeypot
+type ChargenEvent struct {
 	ID        string
 	SourceIP  string
 	Port      int

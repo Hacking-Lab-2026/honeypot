@@ -12,10 +12,10 @@ type Logger interface {
 	Error(message string)
 }
 
-// EventRepository defines the interface for probe event persistence.
-type EventRepository interface {
-	Save(event *models.ProbeEvent) error
-	Get(id string) (*models.ProbeEvent, error)
+// ChargenEventRepository defines the interface for CHARGEN (RFC 864) probe event persistence.
+type ChargenEventRepository interface {
+	Save(event *models.ChargenEvent) error
+	Get(id string) (*models.ChargenEvent, error)
 }
 
 // RateLimiter defines the interface for rate-limiting strategies.
