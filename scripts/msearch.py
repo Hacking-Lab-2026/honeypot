@@ -24,10 +24,7 @@ def send_msearch(host, port=1900, timeout=3):
             data, addr = sock.recvfrom(4096)
             # Only keep replies from the host we queried — filters out LAN
             # devices (routers, printers) that also answer M-SEARCH.
-            if addr[0] == host:
-                packets.append(data)
-            else:
-                print(f"  (ignored reply from {addr[0]} — not the target)")
+            packets.append(data)
     except socket.timeout:
         pass
     sock.close()
