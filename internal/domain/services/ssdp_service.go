@@ -51,24 +51,25 @@ func (s *SSDPService) BuildResponse(query *models.SSDPQuery, cfg models.SSDPConf
 // buildMinimalResponse returns a single response advertising only rootdevice.
 // Looks like a sparsely-configured UPnP device.
 func (s *SSDPService) buildMinimalResponse(query *models.SSDPQuery, localIP string) (models.SSDPResponse, error) {
-	pkt := s.buildResponsePacket(query.ST, fakeServiceTypes[0], localIP)
+	uuid := generateUUID()
+	pkt := s.buildResponsePacket(query.ST, fakeServiceTypes[0], localIP, uuid)
 	return models.SingleSSDPPacketResponse(pkt), nil
 }
 
 // buildAmplifiedResponse returns N response packets, one per advertised service.
 func (s *SSDPService) buildAmplifiedResponse(query *models.SSDPQuery, numServices int, localIP string) (models.SSDPResponse, error) {
 	packets := make([][]byte, 0, numServices)
+	uuid := generateUUID()
 	for i := 0; i < numServices; i++ {
-		pkt := s.buildResponsePacket(query.ST, fakeServiceTypes[i], localIP)
+		pkt := s.buildResponsePacket(query.ST, fakeServiceTypes[i], localIP, uuid)
 		packets = append(packets, pkt)
 	}
 	return models.SSDPResponse{Packets: packets}, nil
 }
 
 // buildResponsePacket constructs a single HTTP 200 OK SSDP response.
-func (s *SSDPService) buildResponsePacket(requestST, serviceType, localIP string) []byte {
+func (s *SSDPService) buildResponsePacket(requestST, serviceType, localIP string, uuid string) []byte {
 	now := time.Now().UTC().Format(time.RFC1123)
-	uuid := generateUUID()
 
 	// Echo back the request's ST if it's a specific target; otherwise use the
 	// service type. Real UPnP behavior.
