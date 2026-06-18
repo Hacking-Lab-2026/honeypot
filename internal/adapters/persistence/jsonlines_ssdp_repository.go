@@ -11,7 +11,6 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 )
 
-// JSONLinesSSDPRepository persists SSDP events to an append-only JSON-lines file.
 type JSONLinesSSDPRepository struct {
 	mu   sync.Mutex
 	file *os.File

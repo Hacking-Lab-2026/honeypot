@@ -13,8 +13,6 @@ import (
 	expusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/experiment"
 )
 
-// CoordinatorServer exposes the experiment management HTTP API.
-// It uses stdlib net/http only — no external router.
 type CoordinatorServer struct {
 	addr             string
 	createExperiment *expusecase.CreateExperimentUsecase
@@ -26,8 +24,6 @@ type CoordinatorServer struct {
 	ntpEventRepo     ports.NTPEventRepository
 }
 
-// NewCoordinatorServer creates the HTTP coordinator server.
-// The optional dnsEventRepo and ntpEventRepo parameters enable the GET /metrics endpoint.
 func NewCoordinatorServer(
 	addr string,
 	createExperiment *expusecase.CreateExperimentUsecase,
@@ -50,7 +46,6 @@ func NewCoordinatorServer(
 	}
 }
 
-// Start starts the HTTP server and blocks until ctx is cancelled.
 func (s *CoordinatorServer) Start(ctx context.Context) error {
 	s.logger.Info("Starting coordinator HTTP server on " + s.addr)
 	srv := &http.Server{
@@ -60,7 +55,7 @@ func (s *CoordinatorServer) Start(ctx context.Context) error {
 
 	go func() {
 		<-ctx.Done()
-		srv.Shutdown(context.Background()) //nolint:errcheck
+		srv.Shutdown(context.Background())
 	}()
 
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -70,7 +65,6 @@ func (s *CoordinatorServer) Start(ctx context.Context) error {
 }
 
 // ServeHTTP routes requests to the appropriate handler.
-//
 //	POST /experiments              → createExperiment
 //	GET  /experiments              → listExperiments
 //	GET  /experiments/{id}         → getExperiment
@@ -124,7 +118,7 @@ func (s *CoordinatorServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ---- request/response types ----
+// request/response types 
 
 type createVariantRequest struct {
 	Name        string            `json:"name"`
@@ -143,7 +137,7 @@ type createExperimentRequest struct {
 	Variants       []createVariantRequest `json:"variants"`
 }
 
-// ---- handlers ----
+// handlers 
 
 func (s *CoordinatorServer) handleCreateExperiment(w http.ResponseWriter, r *http.Request) {
 	var req createExperimentRequest
@@ -243,7 +237,7 @@ func (s *CoordinatorServer) handleMetrics(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusOK, metricsResponse{ProbeCounts: counts, Total: total, NTPProbeCounts: ntpCounts, NTPTotal: ntpTotal})
 }
 
-// ---- analytics handlers ----
+// analytic 
 
 type eventItem struct {
 	ID                  string    `json:"id"`
@@ -411,7 +405,7 @@ func (s *CoordinatorServer) handleTopIPs(w http.ResponseWriter, r *http.Request)
 	writeJSON(w, http.StatusOK, topIPsResponse{TopIPs: entries})
 }
 
-// ---- helpers ----
+// helpers
 
 type errorResponse struct {
 	Error string `json:"error"`
@@ -420,7 +414,7 @@ type errorResponse struct {
 func writeJSON(w http.ResponseWriter, status int, v interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v) //nolint:errcheck
+	json.NewEncoder(w).Encode(v)
 }
 
 func writeError(w http.ResponseWriter, status int, msg string) {

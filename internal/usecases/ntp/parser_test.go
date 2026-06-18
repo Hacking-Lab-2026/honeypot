@@ -6,7 +6,7 @@ import (
 )
 
 func TestParseNTPRequest_Valid(t *testing.T) {
-	// Build a minimal 48-byte NTP request with VN=4 Mode=3 and a known transmit timestamp.
+	// Build a minimal 48-byte NTP request with VN=4 Mode=3 and a known transmit timestamp
 	pkt := make([]byte, 48)
 	pkt[0] = byte((0 << 6) | ((4 & 0x7) << 3) | (3 & 0x7))
 	// set transmit timestamp at offset 40..47

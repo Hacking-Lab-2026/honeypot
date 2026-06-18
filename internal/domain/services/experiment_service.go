@@ -10,15 +10,7 @@ import (
 )
 
 const weightEpsilon = 0.001
-
-// ExperimentService contains business logic for experiment management.
-// It is pure Go â€” no repository or network dependencies.
 type ExperimentService struct{}
-
-// AssignVariant deterministically picks a variant for the given sourceIP in an experiment.
-// The same (experimentID, sourceIP) pair always returns the same variant â€” no randomness at call
-// time. Consistent hashing is used so that adding more source IPs does not reshuffle existing
-// assignments.
 func (s *ExperimentService) AssignVariant(experimentID, sourceIP string, variants []*models.Variant) (*models.Variant, error) {
 	if len(variants) == 0 {
 		return nil, fmt.Errorf("experiment %q has no variants", experimentID)
@@ -27,12 +19,7 @@ func (s *ExperimentService) AssignVariant(experimentID, sourceIP string, variant
 	h := fnv.New64a()
 	h.Write([]byte(experimentID + ":" + sourceIP))
 	hash := h.Sum64()
-
-	// Normalize hash to [0, 1).  Adding 1 to the denominator avoids div-by-zero and keeps
-	// the result strictly below 1 even for the maximum hash value.
 	f := float64(hash) / (float64(^uint64(0)) + 1)
-
-	// Sort variants by ID so that the ordering is deterministic regardless of insertion order.
 	sorted := make([]*models.Variant, len(variants))
 	copy(sorted, variants)
 	sort.Slice(sorted, func(i, j int) bool { return sorted[i].ID < sorted[j].ID })
@@ -44,13 +31,11 @@ func (s *ExperimentService) AssignVariant(experimentID, sourceIP string, variant
 			return v, nil
 		}
 	}
-
-	// Fallback for floating-point edge cases at the top of the range.
 	return sorted[len(sorted)-1], nil
 }
 
-// AssignVariantByDestination finds the variant whose AssignedIPs list contains destinationIP.
-// Returns an error if no variant claims that IP.
+// finds the variant whose AssignedIPs list contains destinationIP
+// returns an error if no variant claims that IP
 func (s *ExperimentService) AssignVariantByDestination(destinationIP string, variants []*models.Variant) (*models.Variant, error) {
 	if len(variants) == 0 {
 		return nil, fmt.Errorf("no variants provided")
@@ -65,8 +50,8 @@ func (s *ExperimentService) AssignVariantByDestination(destinationIP string, var
 	return nil, fmt.Errorf("no variant assigned to destination IP %q", destinationIP)
 }
 
-// ValidateExperiment checks that an experiment configuration is well-formed.
-// In source mode it verifies weights sum to ~1.0; in destination mode it checks AssignedIPs.
+// checks that an experiment configuration is well-formed
+// in source mode it verifies weights sum to ~1.0, in destination mode it checks AssignedIPs
 func (s *ExperimentService) ValidateExperiment(exp *models.Experiment, variants []*models.Variant) error {
 	if exp.Name == "" {
 		return fmt.Errorf("experiment name must not be empty")
@@ -82,7 +67,7 @@ func (s *ExperimentService) ValidateExperiment(exp *models.Experiment, variants 
 			}
 		}
 	} else {
-		// Source mode (default): weights must sum to 1.0.
+		// Source mode (default): weights must sum to 1.0
 		total := 0.0
 		for _, v := range variants {
 			if v.Weight < 0 || v.Weight > 1 {
@@ -95,7 +80,7 @@ func (s *ExperimentService) ValidateExperiment(exp *models.Experiment, variants 
 		}
 	}
 
-	// Per-variant protocol config validation.
+	// Per-variant protocol config validation
 	for _, v := range variants {
 		if v.NTPConfig.ResponseMode != "" {
 			if v.NTPConfig.ResponseMode != "minimal" && v.NTPConfig.ResponseMode != "amplified" {

@@ -7,18 +7,15 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 )
 
-// UpdateStatusUsecase sets an experiment's status to active or stopped.
 type UpdateStatusUsecase struct {
 	experimentRepo ports.ExperimentRepository
 	logger         ports.Logger
 }
 
-// NewUpdateStatusUsecase creates a new instance.
 func NewUpdateStatusUsecase(experimentRepo ports.ExperimentRepository, logger ports.Logger) *UpdateStatusUsecase {
 	return &UpdateStatusUsecase{experimentRepo: experimentRepo, logger: logger}
 }
 
-// Execute transitions the experiment to the given status.
 func (u *UpdateStatusUsecase) Execute(experimentID string, status models.ExperimentStatus) (*models.Experiment, error) {
 	exp, err := u.experimentRepo.GetExperiment(experimentID)
 	if err != nil {

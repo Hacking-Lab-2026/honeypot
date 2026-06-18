@@ -105,7 +105,7 @@ var _ = Describe("ChargenHandler", func() {
 	})
 })
 
-// Mock rate limiter for testing
+// test mock rate limiter
 type mockRateLimiter struct {
 	allowRequests bool
 }

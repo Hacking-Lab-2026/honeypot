@@ -7,19 +7,15 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 )
 
-// DNSInMemoryRepository implements ports.DNSEventRepository using an in-memory slice.
-// A mutex protects all reads and writes because the DNS server spawns one goroutine per packet.
 type DNSInMemoryRepository struct {
 	mu     sync.Mutex
 	events []*models.DNSEvent
 }
 
-// NewDNSInMemoryRepository creates a new empty repository.
 func NewDNSInMemoryRepository() *DNSInMemoryRepository {
 	return &DNSInMemoryRepository{}
 }
 
-// Save appends a DNS event to the in-memory store.
 func (r *DNSInMemoryRepository) Save(event *models.DNSEvent) error {
 	if event == nil {
 		return fmt.Errorf("DNS event cannot be nil")
@@ -30,7 +26,6 @@ func (r *DNSInMemoryRepository) Save(event *models.DNSEvent) error {
 	return nil
 }
 
-// List returns a snapshot of all stored DNS events.
 func (r *DNSInMemoryRepository) List() ([]*models.DNSEvent, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

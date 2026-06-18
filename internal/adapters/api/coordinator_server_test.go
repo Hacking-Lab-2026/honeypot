@@ -19,7 +19,7 @@ type testLogger struct{}
 func (l *testLogger) Info(_ string)  {}
 func (l *testLogger) Error(_ string) {}
 
-// newTestServer wires a real CoordinatorServer backed by in-memory repos for HTTP testing.
+// newTestServer wires a real CoordinatorServer
 func newTestServer(t *testing.T) *api.CoordinatorServer {
 	t.Helper()
 	logger := &testLogger{}
@@ -103,7 +103,6 @@ func TestCoordinator_PostExperiments_BadWeights_BadRequest(t *testing.T) {
 func TestCoordinator_GetExperimentByID(t *testing.T) {
 	srv := newTestServer(t)
 
-	// Create an experiment first
 	req := httptest.NewRequest(http.MethodPost, "/experiments", bytes.NewReader(createExperimentBody("Detail Test")))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -115,7 +114,6 @@ func TestCoordinator_GetExperimentByID(t *testing.T) {
 	var created models.Experiment
 	json.Unmarshal(w.Body.Bytes(), &created)
 
-	// Now GET it
 	req2 := httptest.NewRequest(http.MethodGet, "/experiments/"+created.ID, nil)
 	w2 := httptest.NewRecorder()
 	srv.ServeHTTP(w2, req2)

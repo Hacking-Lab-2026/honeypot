@@ -11,7 +11,7 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 )
 
-// HandleNTPRequestUsecase orchestrates NTP request processing.
+// orchestrates NTP request processing
 type HandleNTPRequestUsecase struct {
 	ntpService  *services.NTPService
 	repository  ports.NTPEventRepository
@@ -36,8 +36,8 @@ func NewHandleNTPRequestUsecase(
 	}
 }
 
-// Execute handles a raw NTP payload and returns the response packets (if any).
-// A nil/empty return means no response should be sent.
+// handles a raw NTP payload and returns the response packets (if any)
+// A nil/empty return means no response should be sent
 func (u *HandleNTPRequestUsecase) Execute(
 	sourceIP string,
 	sourcePort int,
@@ -81,7 +81,7 @@ func (u *HandleNTPRequestUsecase) Execute(
 		sentBytes += len(pkt)
 	}
 
-	// Compute amplification based on what we actually sent.
+	// Compute amplification based on what we actually sent
 	amp := 0.0
 	if query.RawSize > 0 {
 		amp = float64(sentBytes) / float64(query.RawSize)
@@ -119,7 +119,7 @@ func (u *HandleNTPRequestUsecase) Execute(
 
 	if err := u.repository.Save(event); err != nil {
 		u.logger.Error(fmt.Sprintf("failed to save NTP event from %s: %v", sourceIP, err))
-		// Continue — we still want to send what we computed even if persistence failed.
+		// Continue, we still want to send what we computed even if persistence failed
 	}
 
 	u.logger.Info(fmt.Sprintf(

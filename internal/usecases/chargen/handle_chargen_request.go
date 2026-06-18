@@ -5,7 +5,6 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 )
 
-// HandleChargenRequestUsecase handles the core business logic for processing incoming CHARGEN probes
 type HandleChargenRequestUsecase struct {
 	chargenService *services.ChargenService
 	repository     ports.ChargenEventRepository
@@ -13,7 +12,7 @@ type HandleChargenRequestUsecase struct {
 	rateLimiter    ports.RateLimiter
 }
 
-// NewHandleChargenRequestUsecase creates a new instance
+// creates a new instance
 func NewHandleChargenRequestUsecase(
 	chargenService *services.ChargenService,
 	repository ports.ChargenEventRepository,
@@ -28,7 +27,7 @@ func NewHandleChargenRequestUsecase(
 	}
 }
 
-// Execute processes an incoming CHARGEN probe
+// processes an incoming CHARGEN probe
 func (u *HandleChargenRequestUsecase) Execute(sourceIP string, port int, protocol string, payload string) (string, error) {
 	u.logger.Info("Processing CHARGEN probe from " + sourceIP)
 

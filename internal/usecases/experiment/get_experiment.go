@@ -6,27 +6,22 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 )
-
-// ExperimentStats summarises assignment counts for an experiment.
 type ExperimentStats struct {
 	TotalAssignments int            `json:"total_assignments"`
-	PerVariant       map[string]int `json:"per_variant"` // variantID â†’ assignment count
+	PerVariant       map[string]int `json:"per_variant"`
 }
 
-// ExperimentDetails bundles an experiment with its variants and runtime stats.
 type ExperimentDetails struct {
 	Experiment *models.Experiment `json:"experiment"`
 	Variants   []*models.Variant  `json:"variants"`
 	Stats      ExperimentStats    `json:"stats"`
 }
 
-// GetExperimentUsecase fetches an experiment together with its variants and assignment stats.
 type GetExperimentUsecase struct {
 	experimentRepo ports.ExperimentRepository
 	assignmentRepo ports.AssignmentRepository
 }
 
-// NewGetExperimentUsecase creates a new instance.
 func NewGetExperimentUsecase(
 	experimentRepo ports.ExperimentRepository,
 	assignmentRepo ports.AssignmentRepository,
@@ -37,7 +32,6 @@ func NewGetExperimentUsecase(
 	}
 }
 
-// Execute retrieves the experiment, its variants, and aggregated assignment statistics.
 func (u *GetExperimentUsecase) Execute(experimentID string) (*ExperimentDetails, error) {
 	exp, err := u.experimentRepo.GetExperiment(experimentID)
 	if err != nil {

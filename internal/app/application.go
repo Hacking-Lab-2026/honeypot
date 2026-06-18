@@ -21,28 +21,26 @@ import (
 	ssdpusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/ssdp"
 )
 
-// Config holds all runtime configuration for the application.
 type Config struct {
-	ChargenAddr     string // UDP CHARGEN server address (e.g. "0.0.0.0:19")
+	ChargenAddr     string // CHARGEN server address (e.g. "0.0.0.0:19")
 	CoordinatorAddr string // HTTP coordinator address (e.g. "0.0.0.0:8080")
 
-	// HoneypotIPs is a comma-separated list of IP addresses to bind DNS servers to.
 	// One DNSServer is started per IP.  Example: "10.0.0.1,10.0.0.2,10.0.0.3"
 	HoneypotIPs string
 	// DNSPort is the port all DNS servers listen on (e.g. "5354" locally, "53" on the VM).
 	DNSPort string
-	// EventsFile is an optional path to a JSON-lines file for DNS event persistence.
-	// When empty, an in-memory repository is used.
+
 	EventsFile string
+
 	// NTPPort is the port NTP servers listen on default 123
 	NTPPort string
 	// SSDP, def 1900
 	SSDPPort string
-	//
+	
 	ExperimentsFile string
 }
 
-// Application sets up and wires all dependencies.
+// Application sets up and wires all dependencies
 type Application struct {
 	chargenServer     *servers.ChargenServer
 	dnsServers        []*servers.DNSServer
@@ -54,8 +52,7 @@ type Application struct {
 	ntpEventRepo      ports.NTPEventRepository
 }
 
-// NewApplication creates and initialises the application with all dependencies wired.
-// This is the single wiring point â€" no other file may perform dependency injection.
+
 func NewApplication(cfg Config) (*Application, error) {
 	logger := &logging.ConsoleLogger{}
 	chargenRateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
@@ -64,14 +61,14 @@ func NewApplication(cfg Config) (*Application, error) {
 	ssdpRateLimiter := ratelimit.NewIPAggregate(ratelimit.DefaultIPBucketConfig())
 	classifier := services.NewClassifierService()
 
-	// ── CHARGEN (RFC 864) server ──────────────────────────────────────────────────
+	// Chargen
 	chargenRepo := persistence.NewInMemoryChargenEventRepository()
 	chargenService := &services.ChargenService{}
 	handleChargenUsecase := chargenUsecase.NewHandleChargenRequestUsecase(chargenService, chargenRepo, logger, chargenRateLimiter)
 	chargenHandler := handlers.NewChargenHandler(handleChargenUsecase)
 	chargenServer := servers.NewChargenServer(cfg.ChargenAddr, chargenHandler, logger)
 
-	// ── DNS event repository (in-memory or file-backed) ───────────────────────────
+	// Dns
 	var dnsEventRepo ports.DNSEventRepository
 	if cfg.EventsFile != "" {
 		repo, err := persistence.NewJSONLinesDNSRepository(cfg.EventsFile)
@@ -109,7 +106,7 @@ func NewApplication(cfg Config) (*Application, error) {
 		ssdpEventRepo = persistence.NewSSDPInMemoryRepository()
 	}
 
-	// ── Experiment / coordinator ──────────────────────────────────────────────────
+	// Experiments
 	experimentRepo := persistence.NewExperimentInMemoryRepository()
 	assignmentRepo := persistence.NewAssignmentInMemoryRepository()
 	experimentService := &services.ExperimentService{}
@@ -120,7 +117,7 @@ func NewApplication(cfg Config) (*Application, error) {
 	updateStatusUsecase := expusecase.NewUpdateStatusUsecase(experimentRepo, logger)
 	assignVariantUsecase := expusecase.NewAssignVariantUsecase(experimentService, experimentRepo, assignmentRepo, logger)
 
-	// ── Load experiments from config file (idempotent) ───────────────────────────
+	// Load Experiments
 	if cfg.ExperimentsFile != "" {
 		n, err := loadExperimentsFromFile(
 			cfg.ExperimentsFile,
@@ -146,7 +143,7 @@ func NewApplication(cfg Config) (*Application, error) {
 		ntpEventRepo,
 	)
 
-	// ── DNS honeypot servers – one per honeypot IP ────────────────────────────────
+	// Dns honey pot
 	dnsService := &services.DNSService{}
 	handleDNSUsecase := dnsusecase.NewHandleDNSQueryUsecase(dnsService, dnsEventRepo, logger, dnsRateLimiter, classifier)
 	dnsHandler := handlers.NewDNSHandler(handleDNSUsecase, assignVariantUsecase, logger)
@@ -181,7 +178,7 @@ func NewApplication(cfg Config) (*Application, error) {
 		addr := ip + ":" + ntpPort
 		ntpServers[i] = servers.NewNTPServer(addr, ip, ntpHandler, logger)
 	}
-	// ── SSDP honeypot servers ─────────────────────────────────────────────────────
+	// SSDP honeypot 
 	ssdpService := &services.SSDPService{}
 	handleSSDPUsecase := ssdpusecase.NewHandleSSDPRequestUsecase(ssdpService, ssdpEventRepo, logger, ssdpRateLimiter, classifier)
 	ssdpHandler := handlers.NewSSDPHandler(handleSSDPUsecase, assignVariantUsecase, logger)
@@ -209,13 +206,12 @@ func NewApplication(cfg Config) (*Application, error) {
 	}, nil
 }
 
-// NTPEventRepository returns the application NTP event repository (useful for tests).
+// NTPEventRepository returns the application NTP event repository
 func (a *Application) NTPEventRepository() ports.NTPEventRepository {
 	return a.ntpEventRepo
 }
 
-// Start launches all servers concurrently and blocks until ctx is cancelled or one server
-// returns a fatal error.
+// Start launches all servers
 func (app *Application) Start(ctx context.Context) error {
 	app.logger.Info("Honeypot application starting")
 
@@ -281,7 +277,7 @@ func (app *Application) Start(ctx context.Context) error {
 	}
 }
 
-// parseIPs splits a comma-separated IP list, trimming whitespace and skipping empty entries.
+// splits a comma-separated IP list, trimming whitespace and skipping empty entries
 func parseIPs(s string) []string {
 	parts := strings.Split(s, ",")
 	result := make([]string, 0, len(parts))

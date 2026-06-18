@@ -11,33 +11,30 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 )
 
-// CreateVariantInput holds the caller-supplied fields for a single variant.
 type CreateVariantInput struct {
 	Name        string
 	Description string
 	Weight      float64
-	AssignedIPs []string // destination-mode only
+	AssignedIPs []string 
 	DNSConfig   models.DNSConfig
 	NTPConfig   models.NTPConfig
 	SSDPConfig  models.SSDPConfig
 }
 
-// CreateExperimentInput holds the caller-supplied fields for a new experiment.
 type CreateExperimentInput struct {
 	Name           string
 	Description    string
-	AssignmentMode models.AssignmentMode // defaults to AssignmentBySource when empty
+	AssignmentMode models.AssignmentMode
 	Variants       []CreateVariantInput
 }
 
-// CreateExperimentUsecase validates and persists a new experiment with its variants.
 type CreateExperimentUsecase struct {
 	experimentService *services.ExperimentService
 	experimentRepo    ports.ExperimentRepository
 	logger            ports.Logger
 }
 
-// NewCreateExperimentUsecase creates a new instance.
+// creates a new instance
 func NewCreateExperimentUsecase(
 	experimentService *services.ExperimentService,
 	experimentRepo ports.ExperimentRepository,
@@ -50,7 +47,7 @@ func NewCreateExperimentUsecase(
 	}
 }
 
-// Execute validates the input, assigns IDs, and persists the experiment.
+// validates the input, assigns IDs, and persists the experiment
 func (u *CreateExperimentUsecase) Execute(input CreateExperimentInput) (*models.Experiment, error) {
 	mode := input.AssignmentMode
 	if mode == "" {
@@ -101,12 +98,12 @@ func (u *CreateExperimentUsecase) Execute(input CreateExperimentInput) (*models.
 	return exp, nil
 }
 
-// newUUID generates a random UUID v4 string using crypto/rand.
+// generates a random UUID v4 string using crypto/rand
 func newUUID() string {
 	b := make([]byte, 16)
-	rand.Read(b)                //nolint:errcheck
-	b[6] = (b[6] & 0x0f) | 0x40 // version 4
-	b[8] = (b[8] & 0x3f) | 0x80 // variant RFC 4122
+	rand.Read(b)                
+	b[6] = (b[6] & 0x0f) | 0x40 
+	b[8] = (b[8] & 0x3f) | 0x80 
 	return fmt.Sprintf("%s-%s-%s-%s-%s",
 		hex.EncodeToString(b[0:4]),
 		hex.EncodeToString(b[4:6]),

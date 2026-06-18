@@ -11,7 +11,6 @@ import (
 const (
 	dnsHeaderSize = 12
 
-	// Compression pointer back to offset 12 (start of the question's QNAME).
 	dnsPtrByte0 = 0xC0
 	dnsPtrByte1 = 0x0C
 
@@ -19,22 +18,17 @@ const (
 	dnsTypeTXT uint16 = 16
 	dnsClassIN uint16 = 1
 
-	// 203.0.113.1 â€” TEST-NET-3 (RFC 5737), documentation-only range.
 	aIP0 byte = 203
 	aIP1 byte = 0
 	aIP2 byte = 113
 	aIP3 byte = 1
 
-	// Default amplified-mode parameters.
 	amplifiedTXTCount   = 10
 	amplifiedTXTPayload = 200
 
 	realisticTTL uint32 = 300
 )
 
-// realisticTXTPayloads contains 9 plausible DNS TXT record strings, each padded to exactly
-// 200 bytes. They mimic SPF, DKIM, and domain-verification records seen on real domains,
-// making amplified responses less obviously synthetic when inspected by an attacker.
 var realisticTXTPayloads = func() [9]string {
 	pad := func(s string) string {
 		if len(s) >= 200 {
@@ -55,11 +49,9 @@ var realisticTXTPayloads = func() [9]string {
 	}
 }()
 
-// DNSService builds DNS wire-format responses for the honeypot.
-// It contains only pure logic and has no knowledge of sockets or persistence.
+
 type DNSService struct{}
 
-// BuildResponse constructs a DNS reply according to the provided config.
 func (s *DNSService) BuildResponse(query models.DNSQuery, config models.DNSConfig) (models.DNSResponse, error) {
 	var ttl uint32
 	switch {
@@ -86,15 +78,11 @@ func (s *DNSService) BuildResponse(query models.DNSQuery, config models.DNSConfi
 	}
 }
 
-// buildMinimalResponse returns one A record â€” small and realistic.
 func (s *DNSService) buildMinimalResponse(txID uint16, question []byte, ttl uint32) (models.DNSResponse, error) {
 	payload := assembleResponse(txID, 1, question, buildARecord(ttl))
 	return models.DNSResponse{Payload: payload}, nil
 }
 
-// buildAmplifiedResponse returns one A record plus many large TXT records.
-// When realisticPadding is true the TXT content uses plausible DNS strings;
-// otherwise it falls back to repeated "A" characters.
 func (s *DNSService) buildAmplifiedResponse(txID uint16, question []byte, ttl uint32, realisticPadding bool) (models.DNSResponse, error) {
 	var answers []byte
 	answers = append(answers, buildARecord(ttl)...)
@@ -111,7 +99,7 @@ func (s *DNSService) buildAmplifiedResponse(txID uint16, question []byte, ttl ui
 	return models.DNSResponse{Payload: payload}, nil
 }
 
-// buildSizedResponse pads the response to approximately targetSize bytes.
+// pads the response to approximately targetSize bytes
 func (s *DNSService) buildSizedResponse(txID uint16, question []byte, ttl uint32, targetSize int) (models.DNSResponse, error) {
 	aRecord := buildARecord(ttl)
 	baseline := assembleResponse(txID, 1, question, aRecord)
@@ -130,7 +118,7 @@ func (s *DNSService) buildSizedResponse(txID uint16, question []byte, ttl uint32
 	return models.DNSResponse{Payload: payload}, nil
 }
 
-// assembleResponse concatenates header + question + answers into a complete DNS message.
+// concatenates header + question + answers into a complete DNS message
 func assembleResponse(txID uint16, anCount uint16, question, answers []byte) []byte {
 	header := buildDNSHeader(txID, anCount)
 	msg := make([]byte, 0, len(header)+len(question)+len(answers))
@@ -140,7 +128,7 @@ func assembleResponse(txID uint16, anCount uint16, question, answers []byte) []b
 	return msg
 }
 
-// buildDNSHeader builds the 12-byte DNS response header.
+// builds the 12-byte DNS response header
 func buildDNSHeader(txID uint16, anCount uint16) []byte {
 	h := make([]byte, dnsHeaderSize)
 	binary.BigEndian.PutUint16(h[0:2], txID)
@@ -151,7 +139,7 @@ func buildDNSHeader(txID uint16, anCount uint16) []byte {
 	return h
 }
 
-// buildQuestion encodes the DNS question section.
+// encodes the DNS question section
 func buildQuestion(encodedName []byte, qtype uint16) []byte {
 	q := make([]byte, len(encodedName)+4)
 	copy(q, encodedName)
@@ -160,7 +148,7 @@ func buildQuestion(encodedName []byte, qtype uint16) []byte {
 	return q
 }
 
-// buildARecord returns a 16-byte A resource record using a compression pointer.
+// returns a 16-byte A resource record using a compression pointer
 func buildARecord(ttl uint32) []byte {
 	r := make([]byte, 16)
 	r[0] = dnsPtrByte0
@@ -176,7 +164,7 @@ func buildARecord(ttl uint32) []byte {
 	return r
 }
 
-// buildTXTRecord builds a TXT resource record for the given text (clamped to 255 bytes).
+// builds a TXT resource record for the given text (clamped to 255 bytes)
 func buildTXTRecord(ttl uint32, text string) []byte {
 	if len(text) > 255 {
 		text = text[:255]
@@ -187,10 +175,8 @@ func buildTXTRecord(ttl uint32, text string) []byte {
 	return buildRR(dnsTypeTXT, ttl, rdata)
 }
 
-// buildTXTRecordOfSize builds a TXT record whose wire size is approximately targetBytes.
-// TXT RDATA is packed as groups of (1-byte length + up to 255 bytes of data).
 func buildTXTRecordOfSize(ttl uint32, targetBytes int) []byte {
-	const rrOverhead = 12 // ptr(2) + type(2) + class(2) + ttl(4) + rdlen(2)
+	const rrOverhead = 12
 	rdataNeeded := targetBytes - rrOverhead
 	if rdataNeeded <= 1 {
 		return buildTXTRecord(ttl, "A")
@@ -216,7 +202,6 @@ func buildTXTRecordOfSize(ttl uint32, targetBytes int) []byte {
 	return buildRR(dnsTypeTXT, ttl, rdata)
 }
 
-// buildRR builds a resource record with the given type and RDATA, using a compression pointer for NAME.
 func buildRR(rrType uint16, ttl uint32, rdata []byte) []byte {
 	r := make([]byte, 12+len(rdata))
 	r[0] = dnsPtrByte0
@@ -229,7 +214,6 @@ func buildRR(rrType uint16, ttl uint32, rdata []byte) []byte {
 	return r
 }
 
-// encodeDNSName converts a domain name string to DNS wire format (length-prefixed labels).
 func encodeDNSName(name string) []byte {
 	var buf []byte
 	for _, label := range strings.Split(name, ".") {
@@ -239,6 +223,6 @@ func encodeDNSName(name string) []byte {
 		buf = append(buf, byte(len(label)))
 		buf = append(buf, []byte(label)...)
 	}
-	buf = append(buf, 0) // root label terminator
+	buf = append(buf, 0)
 	return buf
 }

@@ -9,11 +9,6 @@ import (
 )
 
 const minDNSMessageSize = 12 // DNS header is always 12 bytes
-
-// ParseQuery parses a raw UDP payload into a DNSQuery.
-// It extracts the transaction ID, QNAME, and QTYPE from the first question.
-// Compression pointers are rejected because they must not appear in query QNAME fields
-// per RFC 1035 Â§4.1.4 (only used in answers).
 func ParseQuery(data []byte) (models.DNSQuery, error) {
 	if len(data) < minDNSMessageSize {
 		return models.DNSQuery{}, fmt.Errorf("DNS message too short: %d bytes (minimum %d)", len(data), minDNSMessageSize)
@@ -44,8 +39,8 @@ func ParseQuery(data []byte) (models.DNSQuery, error) {
 	}, nil
 }
 
-// parseQName reads a DNS label-encoded name starting at offset and returns the
-// decoded name string and the offset immediately after the terminating zero byte.
+// reads a DNS label-encoded name starting at offset and returns the
+// decoded name string and the offset immediately after the terminating zero byte
 func parseQName(data []byte, offset int) (string, int, error) {
 	var labels []string
 	for {
@@ -57,7 +52,6 @@ func parseQName(data []byte, offset int) (string, int, error) {
 			offset++
 			break
 		}
-		// Top two bits set indicate a compression pointer â€” not expected in queries.
 		if length&0xC0 != 0 {
 			return "", 0, fmt.Errorf("unexpected label type 0x%02X at offset %d (compression pointers not allowed in queries)", data[offset], offset)
 		}

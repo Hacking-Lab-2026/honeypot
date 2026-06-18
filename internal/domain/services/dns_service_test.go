@@ -20,12 +20,12 @@ func TestBuildResponse_Minimal(t *testing.T) {
 	if len(resp.Payload) == 0 {
 		t.Fatal("response payload must not be empty")
 	}
-	// Check transaction ID echoed
+	// Check transaction ID
 	txID := binary.BigEndian.Uint16(resp.Payload[0:2])
 	if txID != 0x1234 {
 		t.Errorf("transaction ID = %04X, want %04X", txID, 0x1234)
 	}
-	// QR=1 (bit 15 of flags word)
+
 	flags := binary.BigEndian.Uint16(resp.Payload[2:4])
 	if flags&0x8000 == 0 {
 		t.Errorf("QR bit not set in flags %04X", flags)
@@ -60,18 +60,15 @@ func TestBuildResponse_RealisticTTL(t *testing.T) {
 	svc := &services.DNSService{}
 	query := models.DNSQuery{TransactionID: 0x0001, Name: "a.b", Type: 1, RawSize: 20}
 
-	// With RealisticTTL=false the A record TTL bytes should be 0.
 	resp, err := svc.BuildResponse(query, models.DNSConfig{ResponseMode: models.Minimal, RealisticTTL: false})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// The A record starts after header(12) + question.  We only check that it parses without
-	// panicking; detailed byte checks are done in dns_service.go unit internals.
+
 	if len(resp.Payload) < 12 {
 		t.Fatalf("response too short: %d bytes", len(resp.Payload))
 	}
 
-	// With RealisticTTL=true the response should be valid too.
 	resp2, err := svc.BuildResponse(query, models.DNSConfig{ResponseMode: models.Minimal, RealisticTTL: true})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

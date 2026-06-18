@@ -8,15 +8,14 @@ import (
 	dnsusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/dns"
 )
 
-// buildRawQuery constructs a minimal but valid DNS query wire-format message.
+
 func buildRawQuery(txID uint16, name string, qtype uint16) []byte {
-	// 12-byte header
 	msg := make([]byte, 12)
 	binary.BigEndian.PutUint16(msg[0:2], txID)
-	binary.BigEndian.PutUint16(msg[2:4], 0x0100) // RD=1, standard query
-	binary.BigEndian.PutUint16(msg[4:6], 1)       // QDCOUNT=1
+	binary.BigEndian.PutUint16(msg[2:4], 0x0100) 
+	binary.BigEndian.PutUint16(msg[4:6], 1)       
 
-	// QNAME in label format
+	
 	for _, label := range strings.Split(name, ".") {
 		if label == "" {
 			continue
@@ -24,13 +23,13 @@ func buildRawQuery(txID uint16, name string, qtype uint16) []byte {
 		msg = append(msg, byte(len(label)))
 		msg = append(msg, []byte(label)...)
 	}
-	msg = append(msg, 0) // root label terminator
+	msg = append(msg, 0) 
 
-	// QTYPE and QCLASS
+	
 	qt := make([]byte, 2)
 	binary.BigEndian.PutUint16(qt, qtype)
 	msg = append(msg, qt...)
-	msg = append(msg, 0x00, 0x01) // CLASS = IN
+	msg = append(msg, 0x00, 0x01) 
 
 	return msg
 }

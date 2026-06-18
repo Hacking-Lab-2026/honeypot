@@ -11,14 +11,12 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 )
 
-// JSONLinesDNSRepository persists DNS events to an append-only JSON-lines file.
-// Each event occupies exactly one line; the file can be read by standard tools (jq, grep, etc.).
 type JSONLinesDNSRepository struct {
 	mu   sync.Mutex
 	file *os.File
 }
 
-// NewJSONLinesDNSRepository opens (or creates) the file at path for append-only writes.
+
 func NewJSONLinesDNSRepository(path string) (*JSONLinesDNSRepository, error) {
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
@@ -27,7 +25,6 @@ func NewJSONLinesDNSRepository(path string) (*JSONLinesDNSRepository, error) {
 	return &JSONLinesDNSRepository{file: f}, nil
 }
 
-// Save marshals the event to JSON and appends it as one line to the file.
 func (r *JSONLinesDNSRepository) Save(event *models.DNSEvent) error {
 	b, err := json.Marshal(event)
 	if err != nil {
@@ -39,7 +36,6 @@ func (r *JSONLinesDNSRepository) Save(event *models.DNSEvent) error {
 	return err
 }
 
-// List reads all events from the beginning of the file and returns them in order.
 func (r *JSONLinesDNSRepository) List() ([]*models.DNSEvent, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -67,7 +63,6 @@ func (r *JSONLinesDNSRepository) List() ([]*models.DNSEvent, error) {
 	return events, nil
 }
 
-// Close releases the underlying file handle.
 func (r *JSONLinesDNSRepository) Close() error {
 	return r.file.Close()
 }

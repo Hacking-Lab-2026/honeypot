@@ -2,17 +2,16 @@ package models
 
 import "time"
 
-// ResponseMode controls how the DNS honeypot constructs replies.
+// controls how the DNS honeypot constructs replies
 type ResponseMode string
 
 const (
-	// Minimal returns a single A record — realistic, small response.
+	// returns a single A record
 	Minimal ResponseMode = "minimal"
-	// Amplified returns many large records to maximise the amplification factor.
+	// returns many large records to maximise the amplification factor
 	Amplified ResponseMode = "amplified"
 )
 
-// DNSConfig holds per-variant configuration for DNS response generation.
 type DNSConfig struct {
 	ResponseMode      ResponseMode `json:"response_mode" yaml:"response_mode"`
 	ResponseSizeBytes int          `json:"response_size_bytes" yaml:"response_size_bytes"`
@@ -21,32 +20,30 @@ type DNSConfig struct {
 	ResponseTTL       int          `json:"response_ttl" yaml:"response_ttl"`
 }
 
-// DNSQuery holds fields parsed from an incoming DNS query packet.
+// holds fields parsed from an incoming DNS query packet
 type DNSQuery struct {
 	TransactionID uint16
 	Name          string
-	Type          uint16 // 1=A, 15=MX, 16=TXT, 255=ANY
+	Type          uint16 
 	RawSize       int    // size of the original UDP payload in bytes
 }
 
-// DNSResponse holds the wire-format bytes to send back to the querier.
 type DNSResponse struct {
 	Payload []byte
 }
 
-// DNSEvent records an observed DNS amplification probe.
 type DNSEvent struct {
 	ID                  string
 	SourceIP            string
 	SourcePort          int
-	DestinationIP       string // which of the honeypot's IPs the probe was sent to
+	DestinationIP       string 
 	QueriedName         string
-	QueryType           string // human-readable: "A", "ANY", "MX", …
+	QueryType           string 
 	ResponsePayload     []byte
 	ResponseSizeBytes   int
 	Timestamp           time.Time
 	VariantID           string
-	ServiceName         string  // protocol/honeypot type, e.g. "dns"
+	ServiceName         string  
 	ProbeType           string  `json:"probe_type"` // "scanner", "attacker", "noise"
-	AmplificationFactor float64 // ResponseSizeBytes / request size
+	AmplificationFactor float64 
 }
