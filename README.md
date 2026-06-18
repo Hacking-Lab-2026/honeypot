@@ -85,16 +85,30 @@ Dockerfile / Dockerfile.loadgen
 
 ## Requirements
 
-- Go 1.25+ (see [go.mod](go.mod))
+- Go 1.25+ (see [go.mod](go.mod)). If you're building inside WSL, run `go version` first -
+  Ubuntu's `apt` package can resolve to a much older gccgo build (e.g. `go1.16.5 gccgo`) that
+  won't satisfy the `go 1.25.0` directive in go.mod. The native Windows and standard Linux/macOS
+  toolchains both work fine.
 - Linux/macOS recommended for binding privileged ports (53, 123, 1900, 19) - use `sudo` or
   remap ports via env vars for local testing without root
+- **Windows**: privileged ports also require an elevated (Run as Administrator) terminal. Even
+  elevated, port 1900 is almost always already held by the built-in "SSDP Discovery" Windows
+  service and 5353 by the mDNS responder - remap `SSDP_PORT`/`DNS_PORT` (see below) rather than
+  trying to free those up
 - Docker + Docker Compose (optional, for the loadgen container)
+- The scapy-based scripts in `scripts/` need raw/spoofed sockets and are Linux-only - run them
+  from WSL or a Linux VM rather than native Windows
 
 ## Build
 
 ```bash
 go build -o honeypot ./cmd/server
 ```
+
+On Windows, build with an explicit `.exe` suffix if you intend to launch it directly from
+PowerShell/cmd rather than Git Bash/WSL - `go build -o honeypot.exe ./cmd/server`. PowerShell
+refuses to execute a file without a recognised extension (`Cannot run a document in the middle
+of a pipeline`).
 
 ## Run
 
@@ -106,7 +120,72 @@ EVENTS_FILE=/tmp/honeypot_events.jsonl \
 ```
 
 One UDP listener per protocol is started for **each** IP in `HONEYPOT_IPS`. The HTTP
-coordinator/API always binds once, to `COORDINATOR_ADDR`.
+coordinator/API always binds once, to `COORDINATOR_ADDR`. On success you'll see one `[INFO]`
+line per server, e.g.:
+
+```
+[INFO] Honeypot application starting
+[INFO] Starting coordinator HTTP server on 0.0.0.0:8080
+[INFO] Starting DNS honeypot server on 127.0.0.1:53
+[INFO] Starting NTP honeypot server on 127.0.0.1:123
+[INFO] Starting SSDP honeypot server on 127.0.0.1:1900
+[INFO] Starting CHARGEN honeypot server on 127.0.0.1:19
+```
+
+A `[ERROR] Failed to listen on UDP for ...: bind: ...` line right after means something else
+already owns that port (or you lack permission) - see [Environment variables](#environment-variables)
+for remapping.
+
+### Local testing without root/admin
+
+To try it out without elevated privileges, remap every port above 1024:
+
+```bash
+HONEYPOT_IPS=127.0.0.1 \
+DNS_PORT=15353 NTP_PORT=11230 SSDP_PORT=11900 CHARGEN_ADDR=127.0.0.1:11919 \
+COORDINATOR_ADDR=127.0.0.1:8080 \
+EVENTS_FILE=/tmp/honeypot_events.jsonl \
+./honeypot
+```
+
+Then verify it's actually answering probes and recording them:
+
+```bash
+# coordinator/API is up
+curl -s http://127.0.0.1:8080/metrics
+# {"probe_counts":{"attacker":0,"noise":0,"scanner":0},"total":0,"ntp_probe_counts":{...}}
+
+# send a raw DNS query for example.com and read the response - dig/nslookup don't reliably
+# support custom ports across platforms, so a one-off Go client is the most portable option:
+cat > /tmp/probe.go <<'EOF'
+package main
+import ("encoding/hex"; "fmt"; "net"; "time")
+func main() {
+	q, _ := hex.DecodeString("aaaa01000001000000000000076578616d706c6503636f6d0000010001")
+	c, _ := net.Dial("udp", "127.0.0.1:15353")
+	c.SetDeadline(time.Now().Add(2 * time.Second))
+	c.Write(q)
+	buf := make([]byte, 4096)
+	n, err := c.Read(buf)
+	if err != nil { fmt.Println("no response:", err); return }
+	fmt.Printf("got %d bytes: %s\n", n, hex.EncodeToString(buf[:n]))
+}
+EOF
+go run /tmp/probe.go
+# got 45 bytes: aaaa8400...  (1 A record - "minimal" mode amplification ~1.5x)
+
+# metrics/events now reflect the probe
+curl -s http://127.0.0.1:8080/metrics
+# {"probe_counts":{"attacker":0,"noise":1,"scanner":0},"total":1,...}
+curl -s http://127.0.0.1:8080/events
+# {"events":[{"id":"...","source_ip":"127.0.0.1","queried_name":"example.com",
+#   "query_type":"A","response_size_bytes":45,"probe_type":"noise", ...}],"total":1}
+```
+
+A minimal-mode DNS reply to an A query is ~45 bytes (1 A record); `probe_type` will read
+`noise`/`scanner`/`attacker` depending on the classifier heuristics (see
+[A/B Experiments](#ab-experiments)). The same event is appended as a JSON line to `EVENTS_FILE`
+if set, or kept in memory only if it's empty.
 
 ### Environment variables
 
@@ -121,8 +200,10 @@ coordinator/API always binds once, to `COORDINATOR_ADDR`.
 | `EVENTS_FILE` | *(empty)* | Path to a JSONL event log; falls back to in-memory storage when empty |
 | `EXPERIMENTS_FILE` | *(empty)* | Path to a YAML file of experiments to load at startup (e.g. [experiments.yaml](experiments.yaml)) |
 
-Binding to ports below 1024 (53, 123, 1900, 19) requires root/`sudo` on most systems, or
-`setcap`/port-forwarding if you want to run unprivileged.
+Binding to ports below 1024 (53, 123, 1900, 19) requires root/`sudo` (or an elevated terminal
+on Windows), or `setcap`/port-forwarding if you want to run unprivileged - see
+[Local testing without root/admin](#local-testing-without-rootadmin) above for a working
+unprivileged example.
 
 ## Running with Docker
 
