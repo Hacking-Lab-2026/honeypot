@@ -59,7 +59,7 @@ func TestNTPService_Mode6Control(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BuildResponse failed: %v", err)
 	}
-	// Mode 6 is not implemented; expects empty response
+	// mode 6 is not implemented, expects empty response
 	if len(resp.Packets) != 0 {
 		t.Errorf("Mode 6 should return empty response, got %d packets", len(resp.Packets))
 	}
@@ -96,7 +96,7 @@ func TestNTPService_Mode7Monlist(t *testing.T) {
 		t.Errorf("Mode 7 response size mismatch: got %d bytes, want %d", totalSize, expectedSize)
 	}
 
-	// Check first packet header: should be mode 7 with M flag set (more packets)
+	// check first packet header: should be mode 7 with M flag set (more packets)
 	mode := resp.Packets[0][0] & 0x7
 	if mode != 7 {
 		t.Errorf("Mode 7 header byte mismatch: got mode %d, want 7", mode)

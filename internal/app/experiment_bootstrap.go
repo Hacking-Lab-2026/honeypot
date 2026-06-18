@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// experimentSpec is the YAML representation of one experiment to be loaded at startup.
+// experimentSpec is the YAML representation of one experiment to be loaded at startup
 type experimentSpec struct {
 	Name           string        `yaml:"name"`
 	Description    string        `yaml:"description"`
@@ -34,8 +34,7 @@ type experimentsFile struct {
 }
 
 // loadExperimentsFromFile reads the YAML spec and creates+starts experiments via the
-// existing usecases. Idempotent: experiments whose name already exists in the repository
-// are skipped. Returns the number of experiments newly created.
+// existing usecases
 func loadExperimentsFromFile(
 	path string,
 	create *expusecase.CreateExperimentUsecase,

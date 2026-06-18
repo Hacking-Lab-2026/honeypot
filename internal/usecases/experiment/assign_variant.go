@@ -9,7 +9,7 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 )
 
-// AssignVariantUsecase resolves the correct variant for a given (experiment, sourceIP) pair,
+// resolves the correct variant for a given (experiment, sourceIP) pair,
 // creating a sticky Assignment on first contact so that repeat probes always see the same variant.
 type AssignVariantUsecase struct {
 	experimentService *services.ExperimentService
@@ -18,7 +18,7 @@ type AssignVariantUsecase struct {
 	logger            ports.Logger
 }
 
-// NewAssignVariantUsecase creates a new instance.
+// creates a new instance
 func NewAssignVariantUsecase(
 	experimentService *services.ExperimentService,
 	experimentRepo ports.ExperimentRepository,
@@ -33,10 +33,7 @@ func NewAssignVariantUsecase(
 	}
 }
 
-// Execute returns the variant for whichever experiment is currently active.
-//
-// In source mode the assignment is sticky per sourceIP.  In destination mode the variant is
-// determined solely by destinationIP (which honeypot IP the probe arrived on).
+// returns the variant for whichever experiment is currently active
 func (u *AssignVariantUsecase) Execute(sourceIP, destinationIP string) (*models.Variant, error) {
 	exp, err := u.experimentRepo.FindActiveExperiment()
 	if err != nil {
@@ -52,7 +49,6 @@ func (u *AssignVariantUsecase) Execute(sourceIP, destinationIP string) (*models.
 		return u.experimentService.AssignVariantByDestination(destinationIP, variants)
 	}
 
-	// Source mode: return the existing sticky assignment if present.
 	existing, err := u.assignmentRepo.FindBySourceAndExperiment(sourceIP, exp.ID)
 	if err == nil && existing != nil {
 		variant, err := u.experimentRepo.GetVariant(existing.VariantID)
@@ -62,7 +58,6 @@ func (u *AssignVariantUsecase) Execute(sourceIP, destinationIP string) (*models.
 		return variant, nil
 	}
 
-	// No existing assignment â€” create one deterministically.
 	assigned, err := u.experimentService.AssignVariant(exp.ID, sourceIP, variants)
 	if err != nil {
 		return nil, fmt.Errorf("variant assignment failed: %w", err)

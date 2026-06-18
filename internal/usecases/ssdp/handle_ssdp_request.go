@@ -11,7 +11,7 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/ports"
 )
 
-// HandleSSDPRequestUsecase orchestrates SSDP request processing.
+// orchestrates SSDP request processing
 type HandleSSDPRequestUsecase struct {
 	ssdpService *services.SSDPService
 	repository  ports.SSDPEventRepository
@@ -36,7 +36,7 @@ func NewHandleSSDPRequestUsecase(
 	}
 }
 
-// Execute handles a raw SSDP payload and returns the response packets (if any).
+// handles a raw SSDP payload and returns the response packets (if any)
 func (u *HandleSSDPRequestUsecase) Execute(
 	sourceIP string,
 	sourcePort int,
@@ -66,7 +66,7 @@ func (u *HandleSSDPRequestUsecase) Execute(
 		return nil, nil
 	}
 
-	// Per-packet rate limiting (matches NTP pattern).
+	// Per-packet rate limiting (matches NTP pattern)
 	sentPackets := make([][]byte, 0, len(response.Packets))
 	sentBytes := 0
 	for _, pkt := range response.Packets {

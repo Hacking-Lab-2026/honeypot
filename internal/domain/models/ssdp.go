@@ -24,7 +24,7 @@ func SingleSSDPPacketResponse(p []byte) SSDPResponse {
 	return SSDPResponse{Packets: [][]byte{p}}
 }
 
-// TotalBytes returns the sum of all packet payload sizes.
+// returns the sum of all packet payload sizes
 func (r SSDPResponse) TotalBytes() int {
 	n := 0
 	for _, p := range r.Packets {
@@ -33,7 +33,7 @@ func (r SSDPResponse) TotalBytes() int {
 	return n
 }
 
-// SSDPEvent records a single SSDP request/response interaction.
+// records a single SSDP request/response interaction
 type SSDPEvent struct {
 	ID                  string
 	SourceIP            string

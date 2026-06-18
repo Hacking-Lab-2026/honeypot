@@ -63,8 +63,8 @@ func ParseSSDPRequest(data []byte) (*models.SSDPQuery, error) {
 	return q, nil
 }
 
-// IsAmplificationProbe returns true if this looks like a discovery probe
-// rather than miscellaneous UPnP traffic. We use this to filter out noise.
+// returns true if this looks like a discovery probe
+// rather than miscellaneous UPnP traffic. We use this to filter out noise
 func IsAmplificationProbe(q *models.SSDPQuery) bool {
 	return strings.Contains(strings.ToLower(q.MAN), "ssdp:discover")
 }

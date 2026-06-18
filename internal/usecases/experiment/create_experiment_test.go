@@ -9,7 +9,7 @@ import (
 	expusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/experiment"
 )
 
-// ---- mocks ----
+// mocks
 
 type mockExperimentRepo struct {
 	experiments map[string]*models.Experiment
@@ -89,7 +89,7 @@ type mockExpLogger struct{}
 func (m *mockExpLogger) Info(_ string)  {}
 func (m *mockExpLogger) Error(_ string) {}
 
-// ---- tests ----
+// tests
 
 func TestCreateExperiment_Valid(t *testing.T) {
 	repo := newMockExperimentRepo()
@@ -116,7 +116,6 @@ func TestCreateExperiment_Valid(t *testing.T) {
 		t.Errorf("Status = %q, want %q", exp.Status, models.StatusStopped)
 	}
 
-	// Both variants must be persisted.
 	variants, err := repo.ListVariants(exp.ID)
 	if err != nil || len(variants) != 2 {
 		t.Errorf("expected 2 variants, got %d (err=%v)", len(variants), err)

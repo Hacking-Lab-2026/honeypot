@@ -11,7 +11,6 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 )
 
-// JSONLinesNTPRepository persists NTP events to an append-only JSON-lines file.
 type JSONLinesNTPRepository struct {
 	mu   sync.Mutex
 	file *os.File

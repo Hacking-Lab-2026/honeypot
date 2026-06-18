@@ -9,8 +9,8 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 )
 
-// Service types a real UPnP device might advertise. Order is deterministic;
-// real ntpd-style honeypots could randomize this for plausibility.
+// Service types a real UPnP device might advertise. Order is deterministic
+// real ntpd-style honeypots could randomize this for plausibility
 var fakeServiceTypes = []string{
 	"upnp:rootdevice",
 	"urn:schemas-upnp-org:device:InternetGatewayDevice:1",
@@ -26,13 +26,11 @@ var fakeServiceTypes = []string{
 
 type SSDPService struct{}
 
-// BuildResponse constructs SSDP replies based on the query and variant config.
-//
-// "amplified": one HTTP 200 OK per advertised service (real UPnP amplification).
-// anything else (including empty): single response advertising rootdevice only.
-//
+// constructs SSDP replies based on the query and variant config
+// "amplified": one HTTP 200 OK per advertised service (real UPnP amplification)
+// anything else (including empty): single response advertising rootdevice only
 // The fail-safe default is "minimal-like" behavior — amplification requires
-// explicit opt-in via cfg.ResponseMode == "amplified".
+// explicit opt-in via cfg.ResponseMode == "amplified"
 func (s *SSDPService) BuildResponse(query *models.SSDPQuery, cfg models.SSDPConfig, localIP string) (models.SSDPResponse, error) {
 	if cfg.ResponseMode != "amplified" {
 		return s.buildMinimalResponse(query, localIP)
@@ -48,14 +46,14 @@ func (s *SSDPService) BuildResponse(query *models.SSDPQuery, cfg models.SSDPConf
 	return s.buildAmplifiedResponse(query, n, localIP)
 }
 
-// buildMinimalResponse returns a single response advertising only rootdevice.
-// Looks like a sparsely-configured UPnP device.
+// returns a single response advertising only rootdevice
+// Looks like a sparsely-configured UPnP device
 func (s *SSDPService) buildMinimalResponse(query *models.SSDPQuery, localIP string) (models.SSDPResponse, error) {
 	pkt := s.buildResponsePacket(query.ST, fakeServiceTypes[0], localIP)
 	return models.SingleSSDPPacketResponse(pkt), nil
 }
 
-// buildAmplifiedResponse returns N response packets, one per advertised service.
+// returns N response packets, one per advertised service
 func (s *SSDPService) buildAmplifiedResponse(query *models.SSDPQuery, numServices int, localIP string) (models.SSDPResponse, error) {
 	packets := make([][]byte, 0, numServices)
 	for i := 0; i < numServices; i++ {
@@ -65,13 +63,13 @@ func (s *SSDPService) buildAmplifiedResponse(query *models.SSDPQuery, numService
 	return models.SSDPResponse{Packets: packets}, nil
 }
 
-// buildResponsePacket constructs a single HTTP 200 OK SSDP response.
+// constructs a single HTTP 200 OK SSDP response
 func (s *SSDPService) buildResponsePacket(requestST, serviceType, localIP string) []byte {
 	now := time.Now().UTC().Format(time.RFC1123)
 	uuid := generateUUID()
 
-	// Echo back the request's ST if it's a specific target; otherwise use the
-	// service type. Real UPnP behavior.
+	// Echo back the request's ST if it's a specific target, otherwise use the
+	// service type. Real UPnP behavior
 	respST := serviceType
 	if requestST != "" && requestST != "ssdp:all" && requestST != "upnp:rootdevice" {
 		respST = requestST
@@ -93,8 +91,8 @@ func (s *SSDPService) buildResponsePacket(requestST, serviceType, localIP string
 	return []byte(body)
 }
 
-// generateUUID returns a UUID v4 string. Non-cryptographic; just needs to look
-// like a real UUID to a casual observer.
+// returns a UUID v4 string. Non-cryptographic; just needs to look
+// like a real UUID to a casual observer
 func generateUUID() string {
 	b := make([]byte, 16)
 	rand.Read(b) //nolint:errcheck

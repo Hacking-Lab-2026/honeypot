@@ -17,7 +17,7 @@ const (
 
 type NTPService struct{}
 
-// BuildResponse constructs an NTP reply based on the query mode and variant config.
+// constructs an NTP reply based on the query mode and variant config.
 //
 // Mode 3 (client): standard server response (mode 4 out), no amplification.
 // Mode 6 (control): not implemented; returns empty (no response sent).
@@ -36,7 +36,7 @@ func (s *NTPService) BuildResponse(query *models.NTPQuery, cfg models.NTPConfig)
 	}
 }
 
-// buildModeServerResponse constructs a standard mode 4 server response to a mode 3 client request.
+// constructs a standard mode 4 server response to a mode 3 client request
 func (s *NTPService) buildModeServerResponse(query *models.NTPQuery) (models.NTPResponse, error) {
 	now := time.Now().UTC()
 	recv := timeToNtp(now)
@@ -66,10 +66,9 @@ func (s *NTPService) buildModeServerResponse(query *models.NTPQuery) (models.NTP
 	return models.SinglePacketResponse(resp), nil
 }
 
-// buildMonlistResponse dispatches on cfg.ResponseMode.
-//
-// "minimal": single empty monlist packet (looks like a patched/non-vulnerable ntpd).
-// "amplified" (or anything else): full multi-packet monlist with cfg.NumPeers fake clients.
+// dispatches on cfg.ResponseMode.
+// "minimal": single empty monlist packet (looks like a patched/non-vulnerable ntpd)
+// "amplified" (or anything else): full multi-packet monlist with cfg.NumPeers fake clients
 func (s *NTPService) buildMonlistResponse(query *models.NTPQuery, cfg models.NTPConfig) (models.NTPResponse, error) {
 	if cfg.ResponseMode != "amplified" {
 		return s.buildShortMonlistResponse(query)
@@ -81,8 +80,8 @@ func (s *NTPService) buildMonlistResponse(query *models.NTPQuery, cfg models.NTP
 	return s.buildAmplifiedMonlistResponse(query, numPeers)
 }
 
-// buildShortMonlistResponse returns a single mode 7 packet with zero items.
-// Mimics a patched ntpd that responds but doesn't leak monitor data.
+// returns a single mode 7 packet with zero items
+// Mimics a patched ntpd that responds but doesn't leak monitor data
 func (s *NTPService) buildShortMonlistResponse(query *models.NTPQuery) (models.NTPResponse, error) {
 	pkt := make([]byte, ntpPrivateHeaderSize)
 	vn := query.VN
@@ -99,8 +98,8 @@ func (s *NTPService) buildShortMonlistResponse(query *models.NTPQuery) (models.N
 	return models.SinglePacketResponse(pkt), nil
 }
 
-// buildAmplifiedMonlistResponse generates a full multi-packet monlist response
-// with `numPeers` fake client entries distributed across multiple UDP datagrams.
+// generates a full multi-packet monlist response
+// with `numPeers` fake client entries distributed across multiple UDP datagrams
 func (s *NTPService) buildAmplifiedMonlistResponse(query *models.NTPQuery, numPeers int) (models.NTPResponse, error) {
 	numPackets := (numPeers + itemsPerMonlistPkt - 1) / itemsPerMonlistPkt
 	packets := make([][]byte, 0, numPackets)
@@ -124,12 +123,11 @@ func (s *NTPService) buildAmplifiedMonlistResponse(query *models.NTPQuery, numPe
 	return models.NTPResponse{Packets: packets}, nil
 }
 
-// buildMonlistPacket builds a single monlist response datagram.
-//
-// `numItems` is how many fake peers this packet carries.
-// `isLast` controls the M (more) flag.
-// `seq` is the packet sequence number.
-// `peerStartIdx` is the global index of the first peer in this packet (used to vary the fake data).
+// builds a single monlist response datagram
+// `numItems` is how many fake peers this packet carries
+// `isLast` controls the M (more) flag
+// `seq` is the packet sequence number
+// `peerStartIdx` is the global index of the first peer in this packet (used to vary the fake data)
 func (s *NTPService) buildMonlistPacket(query *models.NTPQuery, numItems int, isLast bool, seq int, peerStartIdx int) []byte {
 	pkt := make([]byte, ntpPrivateHeaderSize+numItems*monGetlist1ItemSize)
 
@@ -170,8 +168,8 @@ func (s *NTPService) buildMonlistPacket(query *models.NTPQuery, numItems int, is
 	return pkt
 }
 
-// writeMonitorItem writes a single 72-byte info_monitor_1 record.
-// Uses addresses in 192.0.2.0/24 (TEST-NET-1, RFC 5737) for the fake clients.
+// writes a single 72-byte info_monitor_1 record
+// Uses addresses in 192.0.2.0/24 (TEST-NET-1, RFC 5737) for the fake clients
 func (s *NTPService) writeMonitorItem(dst []byte, idx int, now uint32) {
 	// firsttime: seconds since stats reset (fake)
 	binary.BigEndian.PutUint32(dst[0:4], 3600+uint32(idx*10))
@@ -215,7 +213,7 @@ func (s *NTPService) writeMonitorItem(dst []byte, idx int, now uint32) {
 	// bytes 33-71 left zero (unused for IPv4 entries)
 }
 
-// timeToNtp converts a Go time to NTP 64-bit timestamp format.
+// timeToNtp converts a Go time to NTP 64-bit timestamp format
 func timeToNtp(t time.Time) uint64 {
 	secs := uint64(t.Unix() + unixToNtpSeconds)
 	frac := uint64((float64(t.Nanosecond()) / 1e9) * (1 << 32))

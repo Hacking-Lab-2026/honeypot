@@ -7,7 +7,7 @@ type NTPConfig struct {
 	NumPeers     int    `json:"num_peers" yaml:"num_peers"`
 }
 
-// NTPQuery is the parsed incoming NTP request.
+// parsed incoming NTP request
 type NTPQuery struct {
 	LI                uint8 // leap indicator
 	VN                uint8 // version number
@@ -27,7 +27,7 @@ func SinglePacketResponse(p []byte) NTPResponse {
 	return NTPResponse{Packets: [][]byte{p}}
 }
 
-// TotalBytes returns the sum of all packet payload sizes.
+// returns the sum of all packet payload sizes
 func (r NTPResponse) TotalBytes() int {
 	n := 0
 	for _, p := range r.Packets {
@@ -36,7 +36,7 @@ func (r NTPResponse) TotalBytes() int {
 	return n
 }
 
-// NTPEvent records a single NTP request/response interaction.
+// records a single NTP request/response interaction
 type NTPEvent struct {
 	ID                  string
 	SourceIP            string

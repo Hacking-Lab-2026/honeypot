@@ -7,7 +7,6 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 )
 
-// NTPInMemoryRepository stores NTP events in memory with mutex protection.
 type NTPInMemoryRepository struct {
 	mu     sync.Mutex
 	events []*models.NTPEvent

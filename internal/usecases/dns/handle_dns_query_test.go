@@ -9,7 +9,7 @@ import (
 	dnsusecase "github.com/Hacking-Lab-2026/honeypot/internal/usecases/dns"
 )
 
-// ---- mock implementations ----
+// mock implementations
 
 type mockDNSRepo struct {
 	saved []*models.DNSEvent
@@ -37,10 +37,9 @@ type blockAllLimiter struct{}
 
 func (blockAllLimiter) Allow(_ string, _ int) bool { return false }
 
-// ---- tests ----
+// tests
 
 func buildMinimalQuery() []byte {
-	// Reuse helper from parser_test.go (same package)
 	return buildRawQuery(0x0001, "example.com", 1)
 }
 
@@ -57,7 +56,7 @@ func TestHandleDNSQuery_Execute_ReturnsResponse(t *testing.T) {
 	if len(resp) == 0 {
 		t.Fatal("expected non-empty response")
 	}
-	// Check that one event was persisted
+
 	if len(repo.saved) != 1 {
 		t.Fatalf("expected 1 saved event, got %d", len(repo.saved))
 	}
@@ -113,7 +112,6 @@ func TestHandleDNSQuery_Execute_AmplifiedConfig(t *testing.T) {
 	uc := dnsusecase.NewHandleDNSQueryUsecase(&services.DNSService{}, repo, logger, allowAllLimiter{})
 
 	minResp, _ := uc.Execute("1.2.3.4", 1234, "10.0.0.1", buildMinimalQuery(), models.DNSConfig{ResponseMode: models.Minimal}, "")
-	// Reset repo
 	repo.saved = nil
 	ampResp, err := uc.Execute("1.2.3.4", 1234, "10.0.0.1", buildMinimalQuery(), models.DNSConfig{ResponseMode: models.Amplified}, "v2")
 	if err != nil {
@@ -122,7 +120,6 @@ func TestHandleDNSQuery_Execute_AmplifiedConfig(t *testing.T) {
 	if len(ampResp) <= len(minResp) {
 		t.Errorf("amplified response (%d bytes) should exceed minimal (%d bytes)", len(ampResp), len(minResp))
 	}
-	// Variant ID should be recorded
 	if repo.saved[0].VariantID != "v2" {
 		t.Errorf("VariantID = %q, want %q", repo.saved[0].VariantID, "v2")
 	}

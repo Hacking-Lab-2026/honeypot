@@ -30,7 +30,7 @@ func TestAssignVariant_Deterministic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// Calling again with the same inputs must return the same variant.
+	// calling again with the same inputs must return the same variant
 	for i := 0; i < 10; i++ {
 		v2, err := svc.AssignVariant("exp1", "192.168.1.1", variants)
 		if err != nil {
@@ -73,7 +73,6 @@ func TestAssignVariant_WeightedDistribution(t *testing.T) {
 		counts[v.ID]++
 	}
 	// Variant "A" (weight 0.9) should get roughly 900 / 1000.
-	// Generous Â±15% tolerance to account for hash non-uniformity.
 	aCount := counts["A"]
 	if aCount < 750 || aCount > 1000 {
 		t.Errorf("variant A assigned to %d/%d (want ~900, allowed 750â€“1000)", aCount, total)

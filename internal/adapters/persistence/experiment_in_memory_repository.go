@@ -7,17 +7,13 @@ import (
 	"github.com/Hacking-Lab-2026/honeypot/internal/domain/models"
 )
 
-// ExperimentInMemoryRepository implements ports.ExperimentRepository.
-// A single RWMutex protects all maps; variants are indexed both by their own ID and by
-// experimentID so ListVariants is O(n) in the number of variants for that experiment only.
 type ExperimentInMemoryRepository struct {
 	mu          sync.RWMutex
 	experiments map[string]*models.Experiment
-	variants    map[string]*models.Variant            // keyed by variant ID
-	byExp       map[string][]string                   // experimentID â†’ []variantID
+	variants    map[string]*models.Variant            
+	byExp       map[string][]string                  
 }
 
-// NewExperimentInMemoryRepository creates a new empty repository.
 func NewExperimentInMemoryRepository() *ExperimentInMemoryRepository {
 	return &ExperimentInMemoryRepository{
 		experiments: make(map[string]*models.Experiment),
@@ -116,14 +112,11 @@ func (r *ExperimentInMemoryRepository) ListVariants(experimentID string) ([]*mod
 	return variants, nil
 }
 
-// AssignmentInMemoryRepository implements ports.AssignmentRepository.
-// A mutex protects the slice; lookups are O(n) which is acceptable for research scale.
 type AssignmentInMemoryRepository struct {
 	mu          sync.RWMutex
 	assignments []*models.Assignment
 }
 
-// NewAssignmentInMemoryRepository creates a new empty repository.
 func NewAssignmentInMemoryRepository() *AssignmentInMemoryRepository {
 	return &AssignmentInMemoryRepository{}
 }

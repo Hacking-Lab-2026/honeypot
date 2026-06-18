@@ -17,7 +17,7 @@ var knownScannerPrefixes = []string{
 	"141.212.",    // University of Michigan / ZMap research
 }
 
-// ClassifierService classifies incoming probes by source IP and query type.
+// classifies incoming probes by source IP and query type
 type ClassifierService struct {
 	requestCounts map[string][]time.Time
 	mu            sync.Mutex
@@ -25,8 +25,8 @@ type ClassifierService struct {
 	rateThreshold int
 }
 
-// NewClassifierService creates a ClassifierService with a 60-second sliding window
-// and a threshold of 25 requests, aligned with the rate-limiter burst setting.
+// creates a ClassifierService with a 60-second sliding window
+// and a threshold of 25 requests, aligned with the rate-limiter burst setting
 func NewClassifierService() *ClassifierService {
 	return &ClassifierService{
 		requestCounts: make(map[string][]time.Time),
@@ -35,17 +35,14 @@ func NewClassifierService() *ClassifierService {
 	}
 }
 
-// Classify returns "scanner", "attacker", or "noise" for a given source IP and DNS query type string.
+// returns "scanner", "attacker", or "noise" for a given source IP and DNS query type string.
 // Rules are evaluated in priority order: scanner prefix → high rate → attacker query type → noise.
 func (c *ClassifierService) Classify(sourceIP string, queryType string) string {
-	// Rule 1: known scanner IP ranges
 	for _, prefix := range knownScannerPrefixes {
 		if strings.HasPrefix(sourceIP, prefix) {
 			return "scanner"
 		}
 	}
-
-	// Rule 2: high request rate (sliding window)
 	c.mu.Lock()
 	now := time.Now()
 	cutoff := now.Add(-c.rateWindow)
@@ -65,7 +62,6 @@ func (c *ClassifierService) Classify(sourceIP string, queryType string) string {
 		return "attacker"
 	}
 
-	// Rule 3: amplification-favoured query types
 	if queryType == "ANY" || queryType == "TXT" {
 		return "attacker"
 	}
@@ -73,8 +69,6 @@ func (c *ClassifierService) Classify(sourceIP string, queryType string) string {
 	return "noise"
 }
 
-// Cleanup removes IPs from the internal map that have no timestamps newer than maxAge.
-// Call periodically to prevent unbounded memory growth.
 func (c *ClassifierService) Cleanup(maxAge time.Duration) {
 	cutoff := time.Now().Add(-maxAge)
 	c.mu.Lock()
