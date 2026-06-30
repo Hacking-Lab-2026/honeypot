@@ -1,0 +1,25 @@
+services:
+  honeypot:
+    image: ghcr.io/hacking-lab-2026/ddos-honeypot:main-a6acc4a
+    container_name: honeypot
+    pull_policy: always
+    restart: unless-stopped
+    network_mode: host
+    user: "0:0"
+    cap_add:
+      - NET_BIND_SERVICE
+    environment:
+      HONEYPOT_IPS: "145.220.231.112,145.220.231.113,145.220.231.114,145.220.231.115,145.220.231.116,145.220.231.117,145.220.231.118,145.220.231.119,145.220.231.120,145.220.231.121,145.220.231.122,145.220.231.123,145.220.231.124,145.220.231.125,145.220.231.126,145.220.231.127"
+      DNS_PORT: "53"
+      NTP_PORT: "123"
+      COORDINATOR_ADDR: "0.0.0.0:8080"
+      EVENTS_FILE: "/data/honeypot_events.jsonl"
+      EXPERIMENTS_FILE: "/config/experiments.yaml"
+
+    volumes:
+      - ./experiments.yaml:/config/experiments.yaml:ro
+      - honeypot-data:/data
+
+volumes:
+  honeypot-data:
+    driver: local

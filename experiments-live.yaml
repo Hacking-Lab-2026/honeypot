@@ -1,0 +1,54 @@
+# Live honeypot deployment configuration.
+# Single experiment with both minimal and amplified variants across all available IPs.
+# This collects baseline and amplified attacker behavior data in parallel.
+
+experiments:
+
+  - name: "Live Honeypot Deployment"
+    description: "Production deployment monitoring attacker behavior with minimal and amplified responses"
+    assignment_mode: "destination"
+    auto_start: true
+    variants:
+      - name: "Minimal"
+        description: "Minimal DNS, NTP, and SSDP responses (baseline)"
+        weight: 0.5
+        assigned_ips:
+          - "145.220.231.112"
+          - "145.220.231.113"
+          - "145.220.231.114"
+          - "145.220.231.115"
+          - "145.220.231.116"
+          - "145.220.231.117"
+          - "145.220.231.118"
+          - "145.220.231.119"
+        dns_config:
+          response_mode: "minimal"
+          realistic_ttl: true
+        ntp_config:
+          response_mode: "minimal"
+          num_peers: 36
+        ssdp_config:
+          response_mode: "minimal"
+          num_services: 3
+      - name: "Amplified"
+        description: "Amplified DNS, NTP, and SSDP responses for DDoS amplification"
+        weight: 0.5
+        assigned_ips:
+          - "145.220.231.120"
+          - "145.220.231.121"
+          - "145.220.231.122"
+          - "145.220.231.123"
+          - "145.220.231.124"
+          - "145.220.231.125"
+          - "145.220.231.126"
+          - "145.220.231.127"
+        dns_config:
+          response_mode: "amplified"
+          realistic_padding: true
+          response_ttl: 300
+        ntp_config:
+          response_mode: "amplified"
+          num_peers: 360
+        ssdp_config:
+          response_mode: "amplified"
+          num_services: 10
