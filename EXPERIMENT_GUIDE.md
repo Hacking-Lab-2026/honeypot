@@ -7,8 +7,8 @@ that compares a minimal DNS response against an amplified one.
 
 Two honeypot IPs serve the same DNS port. Each IP is bound to a different variant:
 
-- **Control** (`127.0.0.1`) — returns a single A record (~45 bytes)
-- **Treatment** (`127.0.0.2`) — returns an A record plus 9 large TXT records (~1962 bytes)
+- **Control** (`127.0.0.1`) - returns a single A record (~45 bytes)
+- **Treatment** (`127.0.0.2`) - returns an A record plus 9 large TXT records (~1962 bytes)
 
 The amplification factor is `response_size / request_size`. A 29-byte query answered with
 1962 bytes yields a **~67x amplification factor**. Recording this per-variant lets you compare
@@ -210,7 +210,7 @@ Expected output:
 
 Leave terminal 1 running. Run all subsequent commands in terminal 2.
 
-## Part 1 — Realistic Padding
+## Part 1 - Realistic Padding
 
 Create an experiment with `realistic_padding: true` on the treatment variant and start it:
 
@@ -249,7 +249,7 @@ Expected: TXT records contain readable SPF/DKIM strings instead of `AAAA...`, an
 ;; MSG SIZE  rcvd: 1962
 ```
 
-## Part 2 — Multi-Protocol NTP Config
+## Part 2 - Multi-Protocol NTP Config
 
 Create an experiment that sets both `dns_config` and `ntp_config` on each variant:
 
@@ -311,7 +311,7 @@ Expected:
 }
 ```
 
-## Part 3 — Scanner Classification and Metrics
+## Part 3 - Scanner Classification and Metrics
 
 Start the server with a fresh event log:
 
