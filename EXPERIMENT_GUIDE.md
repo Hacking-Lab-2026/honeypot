@@ -162,7 +162,7 @@ The server logs will show the accepted queries but nothing for the dropped ones:
 intentional and silent. This confirms the real `IPAggregate` token bucket is wired in and the
 `NoOpRateLimiter` (which allows everything) is not in use.
 
-# Week 3 — DNS Configurable Responses, Multi-Protocol A/B Framework, and Scanner Classification
+# Week 3 - DNS Configurable Responses, Multi-Protocol A/B Framework, and Scanner Classification
 
 ## Step 1 - Build
 
