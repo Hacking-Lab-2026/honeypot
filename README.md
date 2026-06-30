@@ -12,22 +12,12 @@ verifying scanner classification), see [EXPERIMENT_GUIDE.md](EXPERIMENT_GUIDE.md
 
 This platform exists to answer:
 
-**RQ2: How can honeypot design choices be systematically evaluated through A/B testing?**
+**RQ: How can A/B testing be used to compare different response configurations in a multi-protocol amplification honeypot?**
 
-- **SQ1** - Do attackers interact more with honeypots that return larger responses, even if
-  those responses are less realistic? *(addressed by the `minimal` vs `amplified` response
-  modes and per-protocol `response_size_bytes`/TTL/padding overrides - see
-  [A/B Experiments](#ab-experiments))*
-- **SQ2** - Do attackers behave differently toward hosts exposing one service versus multiple
-  amplification services? *(addressed by running DNS/NTP/SSDP/CHARGEN independently or
-  together on the same `HONEYPOT_IPS` and comparing classification/engagement per protocol)*
-- **SQ3** - Which rate-limiting strategy reduces outgoing traffic the most while still
-  preserving useful information about scans and probes? *(addressed by the per-source-IP
-  token-bucket rate limiter - see [Per-source-IP rate limiting](#what-it-does) and the rate
-  limiter tests)*
-- **SQ4** - Does the network where the honeypot is deployed influence how quickly it is
-  discovered? *(addressed by deploying the same experiment configuration across networks and
-  comparing time-to-first-probe via `/stats/timeseries` and `/events`)*
+- **SQ1** - How does observed traffic differ between the Minimal and Amplified response variants? - see [A/B Experiments](#ab-experiments)*
+- **SQ2** - Do sources that contact both variants interact differently with the Minimal and Amplified configurations?*
+- **SQ3** - How do response size and amplification factor differ between the two variants across DNS, NTP, and SSDP?*
+- **SQ4** - How effectively does the size-aware rate limiter suppress amplification egress, and how does its effect vary across protocols? - see [Per-source-IP rate limiting](#what-it-does) and the rate limiter tests*
 
 ## What it does
 
@@ -78,6 +68,7 @@ internal/
   app/                  Application: wires everything together from Config, Start/Stop lifecycle
 
 scripts/                scapy-based spoofing/load-test scripts for the experiment guide (lab-only)
+scripts_analysis/     offline analysis pipeline (dataset preparation, A/B evaluation, classification, and SQ3/SQ4 table generation)
 experiments.yaml         example experiments auto-loaded at startup (see below)
 compose.yml             docker-compose for the loadgen container
 Dockerfile / Dockerfile.loadgen
@@ -310,6 +301,36 @@ IPs and fires concurrent NTP requests at a target, for load-testing without raw 
 
 `test_probe.sh` starts the built `honeypot` binary in the background, fires a single UDP probe
 at port 53, and lets it run for 5 seconds - a quick smoke test.
+
+## Data analysis
+
+The `scripts_analysis/` directory contains the offline analysis pipeline used to process the collected honeypot dataset and generate the statistics and tables used in the evaluation.
+
+- `run_all.py` – runs the complete analysis pipeline in the correct dependency order (optionally rebuilding the Parquet dataset first).
+- `clean_parquet.py` – converts the raw JSONL event log into a cleaned Parquet dataset for analysis.
+- `common.py` – shared configuration, experiment definitions, and SQL helpers used by the analysis scripts.
+- `classify.py` – performs per-source behavioral classification (scanner, attacker, flooder, prober, or noise) using traffic intensity and amplification intent.
+- `ab_var_overview.py` – compares the Minimal and Amplified experiment variants, including traffic volume, unique sources, response characteristics, and source overlap.
+- `resp_size_ab.py` – compares response sizes for source IPs that interacted with both experimental variants.
+- `dual_arm_direction.py` – analyzes traffic distribution for dual-arm sources to detect preference or skew between the Minimal and Amplified variants.
+- `amplification_and_modes.py` – computes amplification statistics, protocol-specific behavior, amplification histograms, and behavioral-mode summaries.
+- `sq3_sq4_tables.py` – generates the evaluation tables for SQ3 (response size and amplification by protocol/variant) and SQ4 (rate-limiter effectiveness).
+
+### Requirements
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r scripts_analysis/requirements.txt
+```
+
+### Running the analysis
+
+```bash
+python scripts_analysis/run_all.py
+```
+
+The scripts expect exported experiment data as input and automatically generate the plots and tables used for evaluating the research questions.
 
 ## Safety & Ethics
 
