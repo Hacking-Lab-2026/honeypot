@@ -9,11 +9,10 @@ import (
 
 // ParseNTPRequest parses the NTP header from a UDP payload.
 // Different NTP modes have different minimum sizes:
-//   - Modes 1-5 (time sync): 48 bytes (standard NTP packet)
-//   - Mode 6 (control): 12 bytes (control header)
-//   - Mode 7 (private/monlist): 8 bytes (private header)
+// 1-5: 48 bytes
+// 6  : 12 bytes (control header, UNSUPPORTED)
+// 7  : 8 bytes (private header, MONLIST)
 func ParseNTPRequest(data []byte) (*models.NTPQuery, error) {
-	// All NTP packets share at least the first byte (LI/VN/Mode).
 	if len(data) < 1 {
 		return nil, fmt.Errorf("ntp packet empty")
 	}
@@ -36,7 +35,6 @@ func ParseNTPRequest(data []byte) (*models.NTPQuery, error) {
 		if len(data) < 8 {
 			return nil, fmt.Errorf("ntp mode 7 packet too short: %d bytes", len(data))
 		}
-		// Byte 2 = implementation, Byte 3 = request code
 		q.ReqCode = data[3]
 		return q, nil
 
@@ -45,7 +43,6 @@ func ParseNTPRequest(data []byte) (*models.NTPQuery, error) {
 		if len(data) < 12 {
 			return nil, fmt.Errorf("ntp mode 6 packet too short: %d bytes", len(data))
 		}
-		// Byte 4 holds the opcode in bits 3-7
 		q.ReqCode = (data[3]) & 0x1f
 		return q, nil
 

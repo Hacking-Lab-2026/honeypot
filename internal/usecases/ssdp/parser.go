@@ -9,11 +9,7 @@ import (
 )
 
 // ParseSSDPRequest extracts the relevant headers from an M-SEARCH request.
-//
-// SSDP is intentionally permissive: real attackers send malformed variants
-// frequently (per Griffioen et al. §5.4, only 67% of attack requests are
-// canonical). We accept anything starting with "M-SEARCH" and try to extract
-// headers; missing headers are returned as empty strings.
+// Accepts anything starting with "M-SEARCH" and tries to extract headers; missing headers are returned as empty strings.
 func ParseSSDPRequest(data []byte) (*models.SSDPQuery, error) {
 	if len(data) == 0 {
 		return nil, fmt.Errorf("ssdp packet empty")

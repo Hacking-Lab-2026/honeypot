@@ -64,9 +64,7 @@ func (u *HandleNTPRequestUsecase) Execute(
 		return nil, nil
 	}
 
-	// Rate-limit each packet independently. If the bucket runs out mid-response,
-	// send what we can and drop the rest. This is the right semantics because
-	// each packet contributes to bandwidth toward the (possibly spoofed) victim.
+	// Rate-limit each packet independently. If the bucket runs out mid-response send max and drop the rest
 	sentPackets := make([][]byte, 0, len(response.Packets))
 	sentBytes := 0
 	for _, pkt := range response.Packets {
@@ -92,9 +90,7 @@ func (u *HandleNTPRequestUsecase) Execute(
 		probeType = u.classifier.Classify(sourceIP, "NTP")
 	}
 
-	// Concatenate sent packets for the event record. (Storing each separately
-	// would be more faithful but bloats the record; concatenation preserves the
-	// total volume which is what matters for analysis.)
+	// Concatenate sent packets for the event record
 	concatenated := make([]byte, 0, sentBytes)
 	for _, pkt := range sentPackets {
 		concatenated = append(concatenated, pkt...)
