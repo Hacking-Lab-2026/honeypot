@@ -23,7 +23,7 @@ def main():
         SELECT
             {ARM_CASE_SQL}                                   AS arm,
             ServiceName                                      AS protocol,
-            COUNT(*)                                         AS events,
+            COUNT(*)  FILTER (WHERE ResponseSizeBytes > 0)   AS events,
             ROUND(AVG(ResponseSizeBytes), 1)                 AS avg_resp_bytes,
             ROUND(AVG(ResponseSizeBytes)
                   FILTER (WHERE ResponseSizeBytes > 0), 1)   AS avg_resp_bytes_served,
