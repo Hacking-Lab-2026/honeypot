@@ -4,6 +4,7 @@ Splits ip llabels to a per protocol count with unique and event counts + avg amp
 Reads the labels from classify.py.
 
 Output: amplification_stats.csv
+        amplification_stats_overall.csv
         amplification_histo.csv
         behavioral_modes.csv
 """
@@ -14,6 +15,7 @@ from common import PARQUET_PATH, PROBE_LABEL_SQL
 
 LABELS_CSV  = "data/classified_sources_tiered.csv"
 OUTPUT_STATS   = "data/amplification_stats.csv"
+OUTPUT_STATS_OVERALL = "data/amplification_stats_overall.csv"
 OUTPUT_BUCKETS = "data/amplification_histo.csv"
 OUTPUT_MODES   = "data/behavioral_modes.csv"
 
@@ -37,6 +39,22 @@ def main():
     stats.to_csv(OUTPUT_STATS, index=False)
     print("Amplification stats")
     print(stats.to_string(index=False))
+
+    overall = con.execute(f"""
+        SELECT ServiceName,
+               COUNT(*) AS event_count,
+               ROUND(AVG(AmplificationFactor), 4)               AS amp_mean,
+               ROUND(MEDIAN(AmplificationFactor), 4)            AS amp_median,
+               ROUND(QUANTILE_CONT(AmplificationFactor,0.99),4) AS amp_p99,
+               ROUND(MAX(AmplificationFactor), 4)               AS amp_max
+        FROM read_parquet('{PARQUET_PATH}')
+        WHERE AmplificationFactor IS NOT NULL AND ServiceName IS NOT NULL
+        GROUP BY ServiceName
+        ORDER BY ServiceName
+    """).df()
+    overall.to_csv(OUTPUT_STATS_OVERALL, index=False)
+    print("Amplification stats whole population")
+    print(overall.to_string(index=False))
 
     buckets = con.execute(f"""
         SELECT ServiceName,
