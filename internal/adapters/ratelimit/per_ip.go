@@ -64,7 +64,7 @@ func (aggregate *IPAggregate) Allow(sourceIP string, responseBytes int) bool {
 }
 
 // egressTokenCost converts a response size into a token cost.
-// It always charges at least one token, and scales roughly one token per 512 bytes.
+// It always charges at least one token, and scales 1 token 128 bytes.
 func egressTokenCost(responseBytes int) int {
 	if responseBytes <= 0 {
 		return 1

@@ -1,0 +1,6 @@
+Please place input jsonls or parquet file here
+This folder also will contain outputs
+Cleaned and parqueted datasets:
+https://tud365-my.sharepoint.com/:f:/r/personal/vadidraga_tudelft_nl/Documents/DDOS%20Honeypot%20Compressed%20Datasets?csf=1&web=1&e=KwBvip
+Original jsonl dataset:
+https://tud365-my.sharepoint.com/shared?listurl=https%3A%2F%2Ftud365%2Dmy%2Esharepoint%2Ecom%2Fpersonal%2Fccalin%5Ftudelft%5Fnl%2FDocuments&id=%2Fpersonal%2Fccalin%5Ftudelft%5Fnl%2FDocuments%2Fhoneypot%5Fevents%2Ejsonl%2Eold%2Egz&parent=%2Fpersonal%2Fccalin%5Ftudelft%5Fnl%2FDocuments&shareLink=1&ga=1
